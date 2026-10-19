@@ -175,7 +175,7 @@ export function guideHtml({ LIDAR, HM, HF, CAL, fig1, fig2, fig3, scans }) {
   <div class="gd-fig ln">FIG1</div>
 
   <section class="gd-col">
-    ${tryIt("Drag the aircraft across Figure 1 to fly it along the road, or use the arrow keys; hover any part to read what it is. Click, or press Space, to slow time a million-fold: one microsecond then lasts a whole second, and you can watch single pulses go down and their echoes come back. The scope under the drawing is the operator's monitor.")}
+    ${tryIt("Drag the aircraft across Figure 1 to fly it along the road, or use the arrow keys; hover any part to read what it is. Click, or press Space, to slow time a million-fold: one microsecond then lasts a whole second, and you can watch single pulses go down and their echoes come back. The scope under the drawing is the operator console.")}
 
     ${head(1)}
     <p>The laser does not shine continuously. It fires short, bright pulses, ${LIDAR.prf / 1000} thousand of them a second in Figure 1. That rate is the <em>pulse repetition frequency</em>, the PRF, and it sets how many points land on the ground.</p>
@@ -198,8 +198,8 @@ export function guideHtml({ LIDAR, HM, HF, CAL, fig1, fig2, fig3, scans }) {
     <p>A range and a mirror angle give a line of sight from the sensor, not a point on the Earth. To turn one into the other, the system has to know where the aircraft was and which way the head pointed at the instant of each pulse, to a few centimetres and a few thousandths of a degree. That is the job of a <em>position and orientation system</em> (POS).</p>
     <ul class="gd-list">
       <li><b>GNSS antenna</b> on the crown of the fuselage, with a clear view of the sky. Its cable runs down to the sensor head and in through a sealed connector to the INS.</li>
-      <li><b>INS</b> (inertial navigation system), one unit bolted rigidly to the sensor head beside the scanner. Its IMU, three gyros and three accelerometers read 200 times a second, measures roll, pitch and heading and carries the position smoothly between fixes; its GNSS receiver fixes the antenna's position several times a second; and its POS processor blends the two in a Kalman filter into a trajectory: where the aircraft was and how it was turned, all through the flight. In the air this solution guides the pilot along the flight lines and lets the operator check coverage.</li>
-      <li><b>Sensor computer</b>, also in the head. It runs the laser and scanner and logs every range and scan angle with its time. One harness to the cabin brings in power and carries its live view to the operator's monitor.</li>
+      <li><b>INS</b> (inertial navigation system), bolted rigidly in the sensor head beside the scanner, in two parts. The <em>IMU</em>, three gyros and three accelerometers read 200 times a second, measures roll, pitch and heading and carries the position smoothly between fixes. Beside it, a small <em>GNSS-inertial board</em> holds the GNSS receiver, which fixes the antenna's position several times a second, and the POS processor, which blends the two in a Kalman filter into a trajectory: where the aircraft was and how it was turned, all through the flight. In the air this solution guides the pilot along the flight lines and lets the operator check coverage.</li>
+      <li><b>Sensor computer</b>, also in the head. It runs the laser and scanner and logs every range and scan angle with its time to an internal drive. One harness to the cabin brings in power from a small power distribution unit (PDU) and carries its live view to the operator console.</li>
     </ul>
     <p>The INS and the sensor computer keep separate clocks. The INS's GNSS receiver puts out a <em>PPS</em>, a pulse on the edge of every GPS second, followed by a message that names the second. The sensor logs when each of those pulses arrives on its own clock, alongside its shots. Afterwards, on the sensor computer, those marks convert every shot's time to GPS time, the trajectory's clock, so each range can be matched to the position and attitude at its instant.</p>
     <p>The trajectory that places the points is also computed after the flight. A GNSS base station on a surveyed point, the tripod at the edge of Figure 1, logs the same satellites all through the flight. Differencing the two receivers removes most of the satellite orbit and atmosphere errors, and the Kalman filter is run forwards and backwards over the whole flight, for a trajectory good to a few centimetres.</p>
@@ -325,7 +325,7 @@ export function guideHtml({ LIDAR, HM, HF, CAL, fig1, fig2, fig3, scans }) {
       <dt>Footprint</dt><dd>The patch of ground one pulse lights, set by beam divergence and range.</dd>
       <dt>GNSS</dt><dd>Satellite positioning: GPS, Galileo, GLONASS, BeiDou.</dd>
       <dt>IMU</dt><dd>Inertial measurement unit: gyros and accelerometers that measure rotation and acceleration.</dd>
-      <dt>INS</dt><dd>Inertial navigation system: here one unit in the sensor head holding the IMU, the GNSS receiver and the POS processor.</dd>
+      <dt>INS</dt><dd>Inertial navigation system: here an IMU and a GNSS-inertial board (GNSS receiver and POS processor) side by side in the sensor head.</dd>
       <dt>Kalman filter</dt><dd>The estimator that blends GNSS fixes and IMU readings into one smooth trajectory: in real time in the air, and again after the flight with base-station data, run forwards and backwards.</dd>
       <dt>Lever arm</dt><dd>The measured offset from the GNSS antenna to the IMU, and from the IMU to the scanner.</dd>
       <dt>Multiple pulses in air</dt><dd>Firing again before the last echo is home; each echo must be matched to its pulse.</dd>
