@@ -76,8 +76,9 @@ export function rangingFig(L, a = {}) {
   const tof = ((2 * R) / C) * 1e6;
   const p = a.p ?? Infinity;
   // left: the aircraft, the pulse down and its echo up, R between them
-  const gy = 204;
-  const S = [104, gy - R * (164 / 150)];
+  // the ground shares the scope's baseline; 150 m reaches the same height as before
+  const gy = 168;
+  const S = [104, gy - R * (128 / 150)];
   out.push(ground(24, 184, gy));
   const top = S[1] + 13;
   const bot = gy - 2;
