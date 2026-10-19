@@ -361,7 +361,7 @@ box("mount.cradle", [-48, -60, CRADLE_Z], [56, 26, CRADLE_Z + 2], { tone: "lo" }
 }
 
 // the sensor housing, cut open: floor, the two far walls whole, the two near walls cut to a sill and a corner,
-// what is left of the lid, a nameplate, and bulkhead receptacles on the inside of the back wall
+// what is left of the lid, a nameplate, and the GNSS bulkhead receptacle on the back wall
 const CASE = { x: -50, y: -62, w: 108, d: 90, r: 1.5 };
 const CASE_Z = CRADLE_Z + 2;
 const FLOOR_Z = CASE_Z + 3;
@@ -401,7 +401,7 @@ box("case.lid-x", [X0, Y0 + 10, LID], [X0 + 10, Y1, LID + 1.6], { tone: "mid" },
   r: 0,
   extra: Dots(Array.from({ length: 8 }, (_, i) => at([X0 + 5, Y0 + 18 + i * 9.4, LID + 1.6])), { size: 0.4, tone: "lo" }),
 });
-const RECEPTACLES = { encoder: [0, 220], imu: [14, 213], data: [23, 214.1], power: [-56, 216] };
+const RECEPTACLES = { gnss: [14, 213] };
 for (const [name, [y, z]] of Object.entries(RECEPTACLES)) {
   box(`case.socket.${name}`, [X0 + WALL, y - 2, z - 2], [X0 + WALL + 1, y + 2, z + 2], { tone: "lo" }, {
     r: 0,
@@ -484,15 +484,34 @@ box("pcb.xtal", [31.5, 4, 212.6], [34, 6, 213.6], { tone: "hi" }, { r: 0.6 });
 box("pcb.header", [35.5, 7, 212.6], [38.5, 15, 214.8], { tone: "mid" }, { r: 0.2, extra: Dots([8.5, 10.5, 12.5].map((y) => at([37, y, 214.8])), { size: 0.35, tone: "lo" }) });
 disc("pcb.sma", alongZ(10.5, 5), 212.6, 215.4, 1.1, { tone: "hi" });
 
-// IMU block with its connector
-box("imu", [-32, 8, 210], [-18, 20, 217], { tone: "mid" }, {
+// INS bolted to the bench beside the scanner: IMU, GNSS receiver and POS computer in one block
+box("ins", [-32, 8, 210], [-18, 20, 217], { tone: "mid" }, {
   r: 0.6,
   bevel: 0.4,
   extra: Ln(k.planOutline(k.insetPlan({ x: -32, y: 8, w: 14, d: 12, r: 0.6 }, 2), 217, P, 2), { tone: "faint" }) + Dots(k.corners({ x: -32, y: 8, w: 14, d: 12 }, 1.2).map(([x, y]) => at([x, y, 217])), { size: 0.35, tone: "lo" }),
 });
 
-// the control rack on an equipment tray on the near seat track: POS and sensor computers and the operator's live display
-// in one box, with the monitor on its stand
+// sensor computer in the far corner of the housing: runs the laser and scanner, logs every shot and serves the operator's
+// display over the harness
+const CPU = { x: -48, y: -48, w: 30, d: 34, r: 0.6 };
+const CPU_Z = 224;
+{
+  const x1 = CPU.x + CPU.w;
+  const y1 = CPU.y + CPU.d;
+  box("cpu", [CPU.x, CPU.y, FLOOR_Z], [x1, y1, CPU_Z], { tone: "mid" }, {
+    r: 0.6,
+    bevel: 0.4,
+    extra:
+      Ln(k.planOutline(k.insetPlan(CPU, 2.5), CPU_Z, P, 2), { tone: "faint" }) +
+      Ln([0, 1, 2].map((i) => k.lineOnTop([CPU.x + 7, CPU.y + 8 + i * 2.4], [CPU.x + 19 - (i === 2 ? 5 : 0), CPU.y + 8 + i * 2.4], CPU_Z, P)).join(""), { tone: "lo", free: true }) +
+      Ln([0, 1, 2, 3, 4].map((i) => path3([[x1, -26 + i * 2.2, 221], [x1, -25.2 + i * 2.2, 221], [x1, -25.2 + i * 2.2, 214], [x1, -26 + i * 2.2, 214]], true)).join("") + path3([[-37, y1, 217.6], [-31, y1, 217.6], [-31, y1, 216], [-37, y1, 216]], true), { tone: "lo" }) +
+      Dots(k.corners(CPU, 1.4).map(([x, y]) => at([x, y, CPU_Z])), { size: 0.35, tone: "lo" }) +
+      Dots([-40, -37.5].map((y) => at([x1, y, 221.5])), { size: 0.7, tone: "hi" }),
+  });
+}
+
+// the operator station on an equipment tray on the near seat track: a power and interface unit with the live display
+// on its stand
 const TRAY = { x: -94, y: 30, w: 34, d: 30, r: 0.8 };
 const DCU_Z = TRACK_Z + 2;
 box("tray", [TRAY.x, TRAY.y, TRACK_Z], [TRAY.x + TRAY.w, TRAY.y + TRAY.d, DCU_Z], { tone: "lo" }, {
@@ -516,23 +535,28 @@ const SCOPE = { a: { y: 6.3, t0: -0.25, t1: 4.95, u0: 1, u1: 21, spike: 3, heigh
 const uA = (t) => SCOPE.a.u0 + ((t - SCOPE.a.t0) / (SCOPE.a.t1 - SCOPE.a.t0)) * (SCOPE.a.u1 - SCOPE.a.u0);
 box("nav.monitor", [MON.x0, MON.y0, MON.z0], [MON.x1, MON.y1, MON.z1], { tone: "lo" }, { r: 0.6, bevel: 0.4, extra: `<g data-part="screen-host"></g>` });
 
-// cables inside the housing end on the bulkhead receptacles; one harness (ranges, encoder, IMU out; PPS in) runs out
-// through the near corner to the control rack
+// cables inside the housing: the encoder, the INS, the timing board and the laser's power all end on the sensor
+// computer, the antenna coax comes in through a bulkhead receptacle to the INS, and one harness (power in; live view
+// out) leaves through the gland in the near corner to the operator station
 const SOCK = X0 + WALL + 1;
+const CPU_X1 = CPU.x + CPU.w;
+const CPU_Y1 = CPU.y + CPU.d;
 cable("cable.apd", [[3, -53.5, 225], [3, -57.5, 225], [48, -57.5, 225], [48, 11, 225], [37, 11, 225], [37, 11, 214.8]], 0.55, { shells: [true, false], bend: 2 });
 cable("cable.t0", [[10.5, -12, 220], [10.5, 5, 220], [10.5, 5, 215.4]], 0.45);
-cable("cable.encoder", [[-39, 0, 220], [SOCK, 0, 220]], 0.6, { shells: [false, true] });
-box("pcb.jack", [20.5, 14.5, 212.6], [27.5, 18, 215.6], { tone: "mid" }, { r: 0.3, extra: Ln(k.lineOnTop([20.5, 16.2], [27.5, 16.2], 215.6, P), { tone: "faint" }) });
-cable("cable.data", [[24, 18, 214.1], [24, 23, 214.1], [SOCK, 23, 214.1]], 0.7, { shells: [true, true], bend: 2.2 });
-cable("cable.imu", [[-32, 14, 213], [SOCK, 14, 213]], 0.55, { shells: [true, true] });
-cable("cable.power", [[30, -27, 216], [30, -56, 216], [SOCK, -56, 216]], 0.8, { shells: [true, true] });
-box("case.gland", [-47, Y1, 219], [-41, Y1 + 1, 225], { tone: "lo" }, { r: 0.3 });
+cable("cable.encoder", [[-39, 0, 220], [-44, 0, 220], [-44, CPU_Y1, 220]], 0.6, { shells: [false, true], bend: 4.6 });
+box("pcb.jack", [20.5, 2, 212.6], [27.5, 5.5, 215.6], { tone: "mid" }, { r: 0.3, extra: Ln(k.lineOnTop([20.5, 3.8], [27.5, 3.8], 215.6, P), { tone: "faint" }) });
+cable("cable.data", [[24, 2, 214.1], [24, -8, 214.1], [-12, -8, 214.1], [-12, -30, 214.1], [CPU_X1, -30, 214.1]], 0.7, { shells: [true, true], bend: 2.2 });
+cable("cable.ins", [[-27, 8, 212], [-27, CPU_Y1, 212]], 0.55, { shells: [true, true] });
+cable("cable.coax", [[-32, 14, 213], [SOCK, 14, 213]], 0.55, { shells: [true, true] });
+cable("cable.power", [[30, -27, 216], [30, -56, 216], [-11, -56, 216], [-11, -44, 216], [CPU_X1, -44, 216]], 0.8, { shells: [true, true] });
+cable("cable.link", [[-46, Y1 - WALL, 222.5], [-46, CPU_Y1, 222.5]], 0.7, { shells: [true, true] });
+box("case.gland", [-48.6, Y1, 219], [-43.4, Y1 + 1, 225], { tone: "lo" }, { r: 0.3 });
 box("nav.socket", [DCU.x1, 48, DCU_Z + 2], [DCU.x1 + 1, 52, DCU_Z + 6], { tone: "lo" }, { r: 0.3 });
-cable("cable.harness", [[-44, Y1 + 1, 222], [-44, 50, 222], [-44, 50, DCU_Z + 4], [DCU.x1 + 1, 50, DCU_Z + 4]], 0.9, { shells: [true, true], bend: 4 });
+cable("cable.harness", [[-46, Y1 + 1, 222], [-46, 50, 222], [-46, 50, DCU_Z + 4], [DCU.x1 + 1, 50, DCU_Z + 4]], 0.9, { shells: [true, true], bend: 4 });
 
-// navigation: a GNSS antenna on a riveted doubler just below the crown cut, its coax through a lightning arrestor and
-// down the inside of the far wall and across the floor to the POS computer in the control rack, which blends GNSS fixes with the IMU
-// and sends a pulse per second back up the harness to the timing board
+// navigation: a GNSS antenna on a riveted doubler just below the crown cut, its coax through a lightning arrestor,
+// down the inside of the far wall, across the floor and up to a bulkhead receptacle on the back of the sensor housing,
+// where it goes on to the GNSS receiver in the INS
 const NAV = { x: -66, deg: 118, coax: 75.6 };
 {
   const r0 = RO + SKIN_T;
@@ -565,7 +589,8 @@ const NAV = { x: -66, deg: 118, coax: 75.6 };
   const arc = Array.from({ length: 11 }, (_, i) => 134 + ((197.8 - 134) * i) / 10).map((d) => [NAV.x, ...yzOf(NAV.coax, d)]);
   const [, ya, za] = arc[arc.length - 1];
   const zf = TRACK_Z + 2.2;
-  cable("cable.gnss", [...arc, [NAV.x, ya + 6, za], [NAV.x, ya + 6, zf], [NAV.x, DCU.y0 - 8, zf], [NAV.x, DCU.y0 - 8, zf + 7], [NAV.x, DCU.y0, zf + 7]], 0.6, { shells: [true, true], bend: 3 });
+  box("case.port", [X0 - 1, 12, 211], [X0, 16, 215], { tone: "lo" }, { r: 0 });
+  cable("cable.gnss", [...arc, [NAV.x, ya + 6, za], [NAV.x, ya + 6, zf], [NAV.x, 14, zf], [NAV.x, 14, 213], [X0 - 1, 14, 213]], 0.6, { shells: [true, true], bend: 3 });
 }
 
 // the scan mirror (rebuilt per frame in the page) and the beam inside the head
@@ -712,7 +737,7 @@ const bigScope = (() => {
 }
 
 const LABEL_TEXT =
-  "A cutaway section of a survey aircraft's fuselage, its top and near side cut away to show frames, windows and the cabin floor. On the floor a lidar head sits in a housing, itself cut open, on a stabilised mount bolted to the seat tracks, with a GNSS antenna on the fuselage above and a control rack of POS and sensor computers on the floor carrying the operator's live display, flying over a small square of country with a road, a house, a shed and trees. A laser fires pulses that a galvanometer mirror swings from side to side; each echo's round-trip time gives a range, and the points build a cloud on the ground as the aircraft flies.";
+  "A cutaway section of a survey aircraft's fuselage, its top and near side cut away to show frames, windows and the cabin floor. On the floor a lidar head sits in a housing, itself cut open, on a stabilised mount bolted to the seat tracks, with an INS and a sensor computer inside it, a GNSS antenna on the fuselage above, and an operator station on the floor carrying the live display, flying over a small square of country with a road, a house, a shed and trees. A laser fires pulses that a galvanometer mirror swings from side to side; each echo's round-trip time gives a range, and the points build a cloud on the ground as the aircraft flies.";
 const backSvg = k.figureSvg({ width: W, height: H, label: LABEL_TEXT, body: back, className: "ln-back" });
 // loupe A: the ring that Fig 2 magnifies, drawn round the housing like a lens held over the drawing
 const loupeA = (() => {
@@ -777,7 +802,7 @@ const fig1 =
       { mark: "raised", label: "Laser, receiver and timing board in a cut-open housing on a stabilised mount over the floor port" },
       { mark: "edge", label: "Points: each one is a pulse's echo, placed by its scan angle and range" },
     ],
-    caption: `A survey aircraft flies over a small square of country with the top and near side of its fuselage cut away. The lidar sensor head sits in a cut-open housing on a stabilised mount, the GNSS antenna is on the crown, and the sensor computer in the control rack on the floor draws the live waveform on its monitor, the scope below. The drawing shows one pulse in ${LIDAR.pulseDecimation.toFixed(0)} and flies ${LIDAR.slow.toFixed(0)}× slower than the real aircraft.`,
+    caption: `A survey aircraft flies over a small square of country with the top and near side of its fuselage cut away. The lidar sensor head sits in a cut-open housing on a stabilised mount, the GNSS antenna is on the crown, and the sensor computer inside the housing sends the live waveform to the operator's monitor on the floor, the scope below. The drawing shows one pulse in ${LIDAR.pulseDecimation.toFixed(0)} and flies ${LIDAR.slow.toFixed(0)}× slower than the real aircraft.`,
     body: stage + bigScope,
   });
 
