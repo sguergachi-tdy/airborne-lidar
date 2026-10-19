@@ -490,8 +490,8 @@ export function wavelengthFig(LASERS) {
   // the 905 nm pulsed diode is not one of Figure 2's lasers, so it is only charted here
   const lasers = [LASERS.green, { nm: 905 }, LASERS.yag, LASERS.fibre];
   const X = (nm) => 200 + ((nm - 400) / 1300) * 340;
-  // table columns: green and fibre sit under their lines; 905 and 1064 are too close, so the four are spaced evenly
-  const COL = [0, 1, 2, 3].map((i) => X(532) + (i * (X(1550) - X(532))) / 3);
+  // table columns: spaced evenly from just past the row labels to the fibre line, using the room left of the chart
+  const COL = [0, 1, 2, 3].map((i) => 178 + (i * (X(1550) - 178)) / 3);
   const Y = (r) => 190 - r * 150;
   const pct = (r) => `${Math.round(r * 100)} %`;
   // spectrum: axes, the visible band, the three curves and where each laser cuts them
