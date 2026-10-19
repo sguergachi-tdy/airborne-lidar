@@ -1,0 +1,797 @@
+/* every figure on the page is tabular, so a changing number never moves the text around it */
+:root {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- the field guide around the figures */
+.gd {
+  --gd-ink: #d6d3cc;
+  --gd-head: #f4f1ea;
+  --gd-soft: #8f8c85;
+  --gd-rule: #262626;
+  --gd-panel: #121212;
+  --gd-accent: #ff6b5a;
+  --gd-serif: "Iowan Old Style", "Charter", "Bitstream Charter", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --gd-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --gd-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Cascadia Code", Consolas, monospace;
+  color: var(--gd-ink);
+  font-family: var(--gd-serif);
+  font-size: 19px;
+  line-height: 1.65;
+  font-kerning: normal;
+  font-variant-numeric: oldstyle-nums tabular-nums;
+  hyphens: auto;
+}
+
+.iso[data-theme="light"] .gd {
+  --gd-ink: #2c2a26;
+  --gd-head: #121110;
+  --gd-soft: #6f6b63;
+  --gd-rule: #dcd8cf;
+  --gd-panel: #f1eee7;
+  --gd-accent: #c2301f;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+.gd-col {
+  max-width: 680px;
+  margin-inline: auto;
+}
+
+.gd p {
+  margin: 0 0 1.05em;
+  text-wrap: pretty;
+}
+
+.gd em {
+  font-style: italic;
+  color: var(--gd-head);
+}
+
+.gd b {
+  font-weight: 600;
+  color: var(--gd-head);
+}
+
+.gd a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.gd a.gd-wiki {
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in srgb, currentColor 50%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  transition: color 0.15s, text-decoration-color 0.15s;
+}
+
+.gd a.gd-wiki:hover,
+.gd a.gd-wiki:focus-visible {
+  color: var(--gd-accent);
+  text-decoration-style: solid;
+  text-decoration-color: currentColor;
+}
+
+.gd .sc {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.05em;
+}
+
+/* small caps belong to running serif text; headings, labels and sans settings keep full capitals */
+.gd :is(h1, h2, h3, dt, th, .gd-toc, .gd-stats, .gd-label, .gd-meta, .gd-try, .gd-colophon, .gd-table) .sc {
+  font-variant-caps: normal;
+  letter-spacing: inherit;
+}
+
+.gd sub {
+  font-size: 0.62em;
+  line-height: 0;
+}
+
+.gd-label {
+  display: block;
+  margin-bottom: 10px;
+  font: 500 11px/1 var(--gd-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gd-accent);
+}
+
+/* masthead */
+.gd-mast {
+  padding: 24px 0 8px;
+}
+
+.gd-kicker {
+  font: 500 12px/1 var(--gd-mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gd-accent);
+  margin-bottom: 28px !important;
+}
+
+.gd h1 {
+  margin: 0 0 24px;
+  font: 500 clamp(42px, 7.4vw, 76px) / 0.98 var(--gd-serif);
+  letter-spacing: -0.025em;
+  color: var(--gd-head);
+  text-wrap: balance;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.gd-dek {
+  font-size: clamp(21px, 2.6vw, 25px);
+  line-height: 1.42;
+  color: var(--gd-soft);
+  text-wrap: balance;
+  hyphens: manual;
+  margin-bottom: 32px !important;
+}
+
+.gd-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  padding: 14px 0;
+  border-block: 1px solid var(--gd-rule);
+  font: 12px/1.5 var(--gd-mono);
+  color: var(--gd-soft);
+  hyphens: manual;
+}
+
+.gd-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.gd-meta span::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--gd-accent);
+  opacity: 0.8;
+}
+
+/* contents */
+.gd-toc {
+  margin: 40px 0 8px;
+}
+
+.gd-toc ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  columns: 2;
+  column-gap: 40px;
+}
+
+.gd-toc li {
+  break-inside: avoid;
+  border-bottom: 1px solid var(--gd-rule);
+}
+
+.gd-toc a {
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+  padding: 9px 0;
+  font-size: 17px;
+  line-height: 1.35;
+  color: var(--gd-ink);
+  transition: color 0.2s var(--anatomy-ease);
+}
+
+.gd-toc a:hover,
+.gd-toc a:focus-visible {
+  color: var(--gd-head);
+}
+
+.gd-toc a:hover .gd-toc-n {
+  color: var(--gd-accent);
+}
+
+.gd-toc-n {
+  flex: none;
+  width: 20px;
+  font: 11px/1 var(--gd-mono);
+  color: var(--gd-soft);
+  transition: color 0.2s var(--anatomy-ease);
+}
+
+/* chapters */
+.gd-chapter {
+  margin: 104px 0 28px;
+  scroll-margin-top: 32px;
+}
+
+.gd-num {
+  display: block;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--gd-rule);
+  font: 500 12px/1 var(--gd-mono);
+  letter-spacing: 0.16em;
+  color: var(--gd-accent);
+}
+
+.gd h2 {
+  margin: 0;
+  font: 500 clamp(30px, 4vw, 40px) / 1.1 var(--gd-serif);
+  letter-spacing: -0.015em;
+  color: var(--gd-head);
+  text-wrap: balance;
+}
+
+.gd h3 {
+  margin: 44px 0 10px;
+  font: 600 13px/1.3 var(--gd-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gd-head);
+}
+
+.gd-lede::first-letter {
+  float: left;
+  margin: 0.07em 0.1em 0 -0.02em;
+  font-size: 4.25em;
+  line-height: 0.78;
+  font-weight: 500;
+  color: var(--gd-head);
+}
+
+/* lists */
+.gd-list {
+  margin: 0 0 1.2em;
+  padding: 0;
+  list-style: none;
+}
+
+.gd-list li {
+  position: relative;
+  padding-left: 26px;
+  margin-bottom: 0.7em;
+}
+
+.gd-list li::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 0.72em;
+  width: 9px;
+  height: 1px;
+  background: var(--gd-accent);
+}
+
+/* equations */
+.gd-eq {
+  margin: 34px 0;
+  padding: 24px 0 20px;
+  border-block: 1px solid var(--gd-rule);
+  text-align: center;
+}
+
+.gd-eq-math {
+  font: clamp(22px, 3.4vw, 30px) / 1.3 var(--gd-serif);
+  color: var(--gd-head);
+  font-variant-numeric: lining-nums tabular-nums;
+  hyphens: manual;
+}
+
+.gd-eq-math i {
+  font-style: italic;
+}
+
+.gd-eq figcaption {
+  margin-top: 10px;
+  font: 12px/1.5 var(--gd-mono);
+  color: var(--gd-soft);
+  letter-spacing: 0.02em;
+}
+
+/* the flat geometry drawn above an equation */
+.gd-eq-drawn {
+  padding-top: 30px;
+}
+
+.gq {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  margin: 0 auto 22px;
+  overflow: visible;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.gq .t-s { --c: var(--gd-soft); }
+.gq .t-h { --c: var(--gd-head); }
+.gq .t-a { --c: var(--gd-accent); }
+.gq .t-f { --c: color-mix(in srgb, var(--gd-soft) 45%, transparent); }
+
+.gq .ln {
+  fill: none;
+  stroke: var(--c);
+  stroke-width: 1.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.gq .fl {
+  fill: var(--c);
+  stroke: none;
+}
+
+.gq .paper,
+.gq .fl-paper {
+  fill: var(--anatomy-paper, #131313);
+}
+
+.gq .fl-paper {
+  stroke: var(--c);
+  stroke-width: 1.1;
+  stroke-linejoin: round;
+}
+
+.gq .dash,
+.gq .dash .ln {
+  stroke-dasharray: 3 4;
+}
+
+.gq .wash {
+  fill: color-mix(in srgb, var(--gd-accent) 13%, transparent);
+}
+
+.gq .trace,
+.gq .mirror {
+  stroke-width: 1.6;
+}
+
+.gq text {
+  font: 13px var(--gd-mono);
+  fill: var(--gd-soft);
+  letter-spacing: 0.01em;
+}
+
+.gq .hd {
+  fill: var(--gd-head);
+}
+
+.gq text.halo {
+  paint-order: stroke;
+  stroke: var(--anatomy-paper, #131313);
+  stroke-width: 5px;
+  stroke-linejoin: round;
+}
+
+.gq .num {
+  fill: var(--gd-accent);
+}
+
+.gq .vi,
+.gq tspan.vi {
+  font-family: var(--gd-serif);
+  font-style: italic;
+  font-size: 18px;
+  fill: var(--gd-head);
+}
+
+.gq .vb,
+.gq tspan.vb {
+  font-family: var(--gd-serif);
+  font-weight: 700;
+  font-size: 18px;
+  fill: var(--gd-head);
+}
+
+.gq text.vi,
+.gq text.vb {
+  font-size: 20px;
+}
+
+.gq tspan.sb {
+  font-size: 10px;
+}
+
+.gq .rot {
+  writing-mode: vertical-rl;
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: rotate(180deg);
+}
+
+/* number strip */
+.gd-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 32px 0 34px;
+  border-top: 1px solid var(--gd-rule);
+}
+
+.gd-stats div {
+  padding: 16px 16px 4px 0;
+}
+
+.gd-stats div + div {
+  padding-left: 16px;
+  border-left: 1px solid var(--gd-rule);
+}
+
+.gd-stats dt {
+  font: 11px/1.3 var(--gd-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gd-soft);
+}
+
+.gd-stats dd {
+  margin: 8px 0 0;
+  font: 500 34px/1 var(--gd-serif);
+  color: var(--gd-head);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.gd-stats small {
+  margin-left: 4px;
+  font: 13px/1 var(--gd-mono);
+  color: var(--gd-soft);
+}
+
+/* the strip's inputs are sliders; the numbers made from them say how */
+.gd-range {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: calc(100% - 6px);
+  height: 22px;
+  margin: 8px 0 4px;
+  background: transparent;
+  cursor: ew-resize;
+  touch-action: pan-y;
+}
+
+.gd-range::-webkit-slider-runnable-track {
+  height: 1px;
+  background: var(--gd-soft);
+}
+
+.gd-range::-moz-range-track {
+  height: 1px;
+  background: var(--gd-soft);
+}
+
+.gd-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -5.5px;
+  border-radius: 50%;
+  background: var(--gd-accent);
+}
+
+.gd-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--gd-accent);
+}
+
+.gd-range:focus-visible {
+  outline: 1px solid var(--gd-accent);
+  outline-offset: 3px;
+}
+
+.gd-rel {
+  margin: 13px 0 6px;
+  font: 12px/1.4 var(--gd-mono);
+  color: var(--gd-soft);
+}
+
+
+:is(.gd-stats dd, .gd-eq-math) [data-k] {
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* asides */
+.gd-try,
+.gd-note,
+.gd-colophon {
+  margin: 34px 0;
+  font: 15.5px/1.6 var(--gd-sans);
+  hyphens: manual;
+}
+
+.gd-try {
+  padding: 2px 0 2px 22px;
+  border-left: 2px solid var(--gd-accent);
+}
+
+.gd-note {
+  padding: 22px 24px;
+  background: var(--gd-panel);
+  border: 1px solid var(--gd-rule);
+  border-radius: 6px;
+}
+
+.gd-note p {
+  font: 22px/1.4 var(--gd-serif);
+  color: var(--gd-head);
+}
+
+.gd-try p:last-child,
+.gd-note p:last-child,
+.gd-colophon p:last-child {
+  margin-bottom: 0;
+}
+
+/* tables */
+.gd-table-wrap {
+  margin: 30px -20px 34px;
+  padding: 0 20px;
+  overflow-x: auto;
+}
+
+.gd-table {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  font: 14.5px/1.5 var(--gd-sans);
+  hyphens: manual;
+}
+
+.gd-table th {
+  padding: 0 14px 10px 0;
+  border-bottom: 1px solid var(--gd-soft);
+  text-align: left;
+  font: 500 10.5px/1.3 var(--gd-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gd-soft);
+}
+
+.gd-table td {
+  padding: 13px 14px 13px 0;
+  border-bottom: 1px solid var(--gd-rule);
+  vertical-align: top;
+}
+
+.gd-table td:first-child {
+  font-weight: 600;
+  color: var(--gd-head);
+  white-space: nowrap;
+}
+
+/* the scanner table: each scanner drawn above its name */
+.gd-table td.gd-scan {
+  width: 112px;
+  padding-right: 18px;
+  text-align: center;
+}
+
+.gd-scan-svg {
+  max-width: 100%;
+  margin: 0 auto 8px;
+}
+
+.gd-scan > span {
+  display: block;
+}
+
+.gd-scan-beam {
+  stroke: #ff4d3d;
+  stroke-width: 1.1;
+}
+
+.iso[data-theme="light"] .gd-scan-beam {
+  stroke: #cc1f26;
+}
+
+.gd-table td.gd-pat-cell {
+  width: 108px;
+}
+
+.gq.gd-pat {
+  width: 98px;
+  max-width: none;
+  margin: 2px 0 8px;
+}
+
+.gq .gd-pat-ln {
+  stroke-width: 0.9;
+}
+
+.gq .gd-pat-px {
+  stroke-width: 0.6;
+}
+
+.gd-pat-cell > span {
+  display: block;
+}
+
+/* definitions */
+.gd-defs,
+.gd-gloss {
+  display: grid;
+  grid-template-columns: 11.5em minmax(0, 1fr);
+  margin: 26px 0 30px;
+}
+
+.gd-defs dt,
+.gd-defs dd,
+.gd-gloss dt,
+.gd-gloss dd {
+  margin: 0;
+  padding: 14px 0;
+  border-top: 1px solid var(--gd-rule);
+}
+
+.gd-defs dt,
+.gd-gloss dt {
+  padding-right: 20px;
+  font-weight: 600;
+  color: var(--gd-head);
+}
+
+.gd-gloss {
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.gd-gloss dt {
+  font: 600 14px/1.65 var(--gd-sans);
+  padding-top: 15px;
+}
+
+/* figures inside the guide */
+.gd-fig {
+  margin: 56px 0 8px;
+  font-family: var(--gd-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  hyphens: manual;
+  font-variant-numeric: tabular-nums;
+}
+
+.gd-fig-wide {
+  margin-top: 64px;
+}
+
+.gd-end {
+  padding-bottom: 24px;
+}
+
+.gd-colophon {
+  margin-top: 64px;
+  padding-top: 22px;
+  border-top: 1px solid var(--gd-rule);
+  color: var(--gd-soft);
+  font-size: 14px;
+}
+
+.gd-colophon .gd-label {
+  color: var(--gd-soft);
+}
+
+@media (max-width: 640px) {
+  .gq text {
+    font-size: 15px;
+  }
+
+  .gq text.vi,
+  .gq text.vb {
+    font-size: 22px;
+  }
+
+  .gq tspan.vi,
+  .gq tspan.vb {
+    font-size: 20px;
+  }
+
+  .gd {
+    font-size: 17.5px;
+    line-height: 1.62;
+  }
+
+  .gd-toc ol {
+    columns: 1;
+  }
+
+  .gd-chapter {
+    margin-top: 76px;
+  }
+
+  .gd-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gd-stats div:nth-child(3) {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .gd-stats div:nth-child(n + 3) {
+    border-top: 1px solid var(--gd-rule);
+  }
+
+  .gd-stats dd {
+    font-size: 28px;
+  }
+
+  .gd-defs,
+  .gd-gloss {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .gd-defs dd,
+  .gd-gloss dd {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .gd-note p {
+    font-size: 19px;
+  }
+}
+
+/* the drawings' replay button, at the top right of the drawing once its animation has played */
+.gd-eq[data-anim] {
+  position: relative;
+}
+
+.gd-replay {
+  position: absolute;
+  top: 8px;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  appearance: none;
+  border: 1px solid var(--gd-rule);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--gd-soft);
+  font: 11px/1 var(--gd-mono);
+  padding: 6px 10px;
+  cursor: pointer;
+  animation: gd-replay-in 0.4s ease-out;
+}
+
+.gd-replay[hidden] {
+  display: none;
+}
+
+.gd-replay:hover,
+.gd-replay:focus-visible {
+  color: var(--gd-head);
+  border-color: var(--gd-soft);
+}
+
+.gd-replay-icon {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@keyframes gd-replay-in {
+  from { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gd-replay { animation: none; }
+}
