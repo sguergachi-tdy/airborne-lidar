@@ -668,6 +668,30 @@ html {
   display: block;
 }
 
+/* the receiver drawings, one above each name */
+.gd-rx {
+  grid-template-columns: 13em minmax(0, 1fr);
+}
+
+.gq.gd-echo {
+  width: 224px;
+  max-width: 100%;
+  margin: 4px 0 10px;
+}
+
+.gq .gd-echo-tk {
+  stroke-width: 0.8;
+}
+
+.gq .gd-echo-px {
+  stroke-width: 1.8;
+}
+
+.gq .gd-echo-bar {
+  stroke-width: 1;
+  stroke-linecap: butt;
+}
+
 /* definitions */
 .gd-defs,
 .gd-gloss {

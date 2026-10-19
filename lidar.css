@@ -2,6 +2,13 @@
   overflow: hidden;
 }
 
+/* the title reads under the figure number, not across the card from it */
+.iso .iso-plate-corner[data-corner="title"] {
+  top: 17px;
+  right: auto;
+  left: 0;
+}
+
 .ln-stage {
   position: relative;
   touch-action: pan-y;
@@ -594,6 +601,10 @@
   .hd-paused {
     top: -14px;
     transform: translate(-50%, -100%);
+  }
+  /* beside the stage, the panels rise into the card's free top-right corner, level with the figure number */
+  .hd-layout > .hd-side {
+    margin-top: -34px;
   }
 }
 
@@ -1263,5 +1274,10 @@
   }
   .cb-note {
     max-width: none;
+  }
+  /* stacked, the stage starts just under the card's title, so the note moves to the free right corner */
+  .cb-exag {
+    left: auto;
+    right: 0;
   }
 }

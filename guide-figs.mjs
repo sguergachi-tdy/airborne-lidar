@@ -1,6 +1,6 @@
 // Flat 2D geometry drawings that sit above the guide's equations. Every length and angle is computed from the model; where
 // a drawing has to exaggerate (spacing, roll, boresight) it says so.
-import { SCANNERS, poseOf, groundOf, FLIGHT } from "./head-model.mjs";
+import { SCANNERS, poseOf, groundOf, FLIGHT, signalAt, discreteOf, photonsOf } from "./head-model.mjs";
 
 const C = 299792458;
 const n = (v) => Math.round(v * 100) / 100;
@@ -598,4 +598,53 @@ export function patternFig(id) {
     for (const r of runs) if (r.length > 1) out.push(line(r, "a", " gd-pat-ln"));
   }
   return `<svg class="gq gd-pat" viewBox="-2 0 ${W + 4} ${H + 2 * top}" role="img" aria-label="${label}">${out.join("")}</svg>`;
+}
+
+// One 1064 nm pulse through a 12 m tree, with values inside echoesFor's own ranges: canopy, branches, a shrub 0.8 m tall
+// (inside the discrete board's 0.9 m dead time) and the ground.
+const TREE_CFG = { laser: "yag" };
+const TREE = [
+  { r: FLIGHT.alt - 11.6, a: 0.44, s: 0.8, what: "canopy" },
+  { r: FLIGHT.alt - 6.2, a: 0.18, s: 0.6, what: "branches" },
+  { r: FLIGHT.alt - 0.8, a: 0.14, s: 0.3, what: "shrub" },
+  { r: FLIGHT.alt, a: 0.15, s: 0.05, what: "ground" },
+];
+const ECHO_LABEL = {
+  discrete: "Discrete returns from one pulse through a tree: three timed peaks, the shrub merged into the ground",
+  waveform: "Full waveform from one pulse through a tree: the echo sampled every 15 cm, the shrub kept as a shoulder",
+  photon: "Single-photon histogram from 400 shots through a tree: detections pile up at each surface over scattered sunlight",
+};
+export function echoFig(id) {
+  const W = 200;
+  const H = 54;
+  const top = 4;
+  const base = top + H;
+  const from = FLIGHT.alt - 14;
+  const to = FLIGHT.alt + 1.6;
+  const step = 0.15;
+  const x = (r) => ((r - from) / (to - from)) * W;
+  const rs = Array.from({ length: Math.round((to - from) / step) + 1 }, (_, i) => from + i * step);
+  const sig = rs.map((r) => signalAt(TREE_CFG, TREE, r));
+  const peak = Math.max(...sig);
+  const y = (v, max = peak) => base - (v / max) * H;
+  const out = [];
+  const ticks = [];
+  for (let r = Math.ceil(from); r <= to; r++) ticks.push(`M${n(x(r))} ${base}v${(r - FLIGHT.alt) % 5 ? 2 : 3.5}`);
+  out.push(`<path class="ln t-f gd-echo-tk" d="${ticks.join("")}"/>`);
+  const fine = Array.from({ length: 311 }, (_, i) => from + ((to - from) * i) / 310);
+  out.push(line(fine.map((r) => [x(r), y(signalAt(TREE_CFG, TREE, r))]), "f"));
+  if (id === "photon") {
+    const { counts, width } = photonsOf(TREE_CFG, TREE, { from, to, bins: rs.length - 1, shots: 400 });
+    const most = Math.max(...counts);
+    const bars = counts.map((c, i) => (c ? `M${n(x(from + (i + 0.5) * width))} ${base}V${n(y(c, most))}` : "")).join("");
+    out.push(`<path class="ln t-a gd-echo-bar" d="${bars}"/>`);
+  } else if (id === "discrete") {
+    const threshold = 0.04;
+    out.push(dash([[0, y(threshold)], [W, y(threshold)]], "f"));
+    for (const p of discreteOf(TREE_CFG, TREE, { from, to, threshold })) out.push(line([[x(p.r), base], [x(p.r), y(p.a)]], "a"), dot([x(p.r), y(p.a)], 1.7));
+  } else {
+    out.push(line(rs.map((r, i) => [x(r), y(sig[i])]), "a"), `<path class="ln t-a gd-echo-px" d="${rs.map((r, i) => `M${n(x(r))} ${n(y(sig[i]))}h0`).join("")}"/>`);
+  }
+  out.push(line([[0, base], [W, base]], "s"));
+  return `<svg class="gq gd-echo" viewBox="-2 0 ${W + 4} ${base + 6}" role="img" aria-label="${ECHO_LABEL[id]}">${out.join("")}</svg>`;
 }

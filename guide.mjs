@@ -1,6 +1,6 @@
 // The field guide that wraps the three figures: chapters, equations, tables and a glossary, every number taken from the
 // same models that drive the drawings.
-import { rangingFig, maxRangeFig, swathFig, spacingFig, densityFig, georefFig, wavelengthFig, patternFig } from "./guide-figs.mjs";
+import { rangingFig, maxRangeFig, swathFig, spacingFig, densityFig, georefFig, wavelengthFig, patternFig, echoFig } from "./guide-figs.mjs";
 import { LASERS } from "./head-model.mjs";
 
 const C = 299792458;
@@ -263,11 +263,11 @@ export function guideHtml({ LIDAR, HM, HF, CAL, fig1, fig2, fig3, scans }) {
     <p>Water slows light by about a quarter (its refractive index is about 1.33), so each metre of depth adds a third more travel time than a metre of air. The beam also bends towards the vertical as it enters, so the echo from a pond bed must be corrected for both before the depth is right.</p>
 
     ${head(9)}
-    <p>The detector turns a few nanoseconds of light into numbers. There are three common ways to listen.</p>
-    <dl class="gd-defs">
-      <dt>Discrete returns</dt><dd>A constant-fraction trigger fires on each peak above the threshold, and a time-to-digital counter (TDC) times it. It keeps several returns per pulse, typically four to eight, and is fast and compact.</dd>
-      <dt>Full waveform</dt><dd>The whole echo is sampled a billion times a second, one sample per 15 cm of range. The returns are found later in processing, which can pull apart echoes too close together for a discrete receiver, such as low shrubs over the ground.</dd>
-      <dt>Single photon</dt><dd>A SPAD array registers single photons, only a few per shot. That takes very little energy per pulse, so it can run at very high PRF and altitude. Sunlight adds stray photons at every range; a surface shows up where detections from many shots line up, and the lone ones are filtered out.</dd>
+    <p>The detector turns a few nanoseconds of light into numbers. There are three common ways to listen. Each drawing is one pulse through the same 12 m tree, with range increasing to the right: canopy, branches, a shrub 80 cm tall, then the ground. The faint curve is the light reaching the detector, and red is what the receiver keeps.</p>
+    <dl class="gd-defs gd-rx">
+      <dt>${echoFig("discrete")}Discrete returns</dt><dd>A constant-fraction trigger fires on each peak above the threshold (dashed), and a time-to-digital counter (TDC) times it. It keeps several returns per pulse, typically four to eight, and is fast and compact. After each trigger it is blind for about a pulse length, so here the shrub merges into the ground and only three returns are kept.</dd>
+      <dt>${echoFig("waveform")}Full waveform</dt><dd>The whole echo is sampled a billion times a second, one sample per 15 cm of range. The returns are found later in processing, which can pull apart echoes too close together for a discrete receiver, such as the shrub's shoulder just before the ground.</dd>
+      <dt>${echoFig("photon")}Single photon</dt><dd>A SPAD array registers single photons, only a few per shot. That takes very little energy per pulse, so it can run at very high PRF and altitude. Sunlight adds stray photons at every range; a surface shows up where detections from many shots line up, and the lone ones are filtered out. The drawing stacks 400 shots.</dd>
     </dl>
     <p>The scope beside Figure 2 shows both views: the pulse train over 3 µs, with every T<sub>0</sub> and the echo that belongs to it, and below it one pulse's echo laid out in range. It reads whatever surface the last pulse hit on the map, marked there with a cross. Nothing repeats exactly: speckle, gaps in a tree's crown and receiver noise change every echo.</p>
   </section>
