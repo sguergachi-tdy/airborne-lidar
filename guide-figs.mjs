@@ -489,16 +489,17 @@ export function wavelengthFig(LASERS) {
   const out = [];
   // the 905 nm pulsed diode is not one of Figure 2's lasers, so it is only charted here
   const lasers = [LASERS.green, { nm: 905 }, LASERS.yag, LASERS.fibre];
-  const X = (nm) => 200 + ((nm - 400) / 1300) * 340;
-  // table columns: spaced evenly from just past the row labels to the fibre line, using the room left of the chart
-  const COL = [0, 1, 2, 3].map((i) => 178 + (i * (X(1550) - 178)) / 3);
+  // the chart spans the table: green sits over the first column and fibre over the last; 905 and 1064 are too close, so the columns are spaced evenly
+  const X = (nm) => 178 + ((nm - 532) / (1550 - 532)) * 323;
+  const COL = [0, 1, 2, 3].map((i) => X(532) + (i * (X(1550) - X(532))) / 3);
+  const x0 = X(400);
   const Y = (r) => 190 - r * 150;
   const pct = (r) => `${Math.round(r * 100)} %`;
   // spectrum: axes, the visible band, the three curves and where each laser cuts them
   out.push(`<defs><linearGradient id="gq-visible" x1="0" x2="1"><stop offset="0" stop-color="#7b3fe4"/><stop offset="0.17" stop-color="#3a62f0"/><stop offset="0.3" stop-color="#22b0d8"/><stop offset="0.43" stop-color="#3cb94a"/><stop offset="0.6" stop-color="#e8cf2a"/><stop offset="0.7" stop-color="#f08a24"/><stop offset="0.93" stop-color="#e03a2c"/><stop offset="1" stop-color="#e03a2c" stop-opacity="0"/></linearGradient></defs>`);
-  out.push(text([190, Y(1.04) - 8], "reflectance %", "lb", "end"));
-  for (const r of [0, 0.5, 1]) out.push(line([[195, Y(r)], [200, Y(r)]], "s"), text([190, Y(r) + 4], `${r * 100}`, "lb", "end"));
-  out.push(line([[200, Y(1)], [200, Y(0)], [X(1700), Y(0)]], "s"));
+  out.push(text([x0 - 10, Y(1.04) - 8], "reflectance %", "lb", "end"));
+  for (const r of [0, 0.5, 1]) out.push(line([[x0 - 5, Y(r)], [x0, Y(r)]], "s"), text([x0 - 10, Y(r) + 4], `${r * 100}`, "lb", "end"));
+  out.push(line([[x0, Y(1)], [x0, Y(0)], [X(1700), Y(0)]], "s"));
   out.push(`<rect x="${n(X(400))}" y="${Y(0) + 5}" width="${n(X(720) - X(400))}" height="4" rx="2" fill="url(#gq-visible)" opacity="0.85"/>`);
   out.push(text([X(550), Y(0) + 24], "visible", "lb"), text([X(1250), Y(0) + 24], "infrared", "lb"));
   for (const L of lasers) out.push(dash([[X(L.nm), Y(1.04)], [X(L.nm), Y(0)]], "a"), text([X(L.nm), Y(1.04) - 8], L.nm === 1550 ? "1550 nm" : `${L.nm}`, "lb hd"));
