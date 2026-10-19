@@ -154,7 +154,7 @@ export function guideHtml({ LIDAR, HM, HF, CAL, fig1, fig2, fig3, scans }) {
   <header class="gd-mast gd-col">
     <div class="gd-mast-top"><p class="gd-kicker">A field guide</p><div class="gd-theme" role="group" aria-label="Colour theme" hidden>${["auto", "light", "dark"].map((t) => `<button type="button" data-theme-pick="${t}" aria-pressed="false">${t[0].toUpperCase() + t.slice(1)}</button>`).join("")}</div></div>
     <h1>How airborne lidar works</h1>
-    <p class="gd-dek">An airborne lidar fires ${f(LIDAR.prf / 1000)} thousand laser pulses a second at the ground and times each echo to a fraction of a nanosecond. Add the aircraft's position and attitude, and every echo becomes a point on the map.</p>
+    <p class="gd-dek">An airborne lidar maps the ground from an aircraft with a laser. It fires short pulses of light downwards, hundreds of thousands a second (the one in this guide fires ${LIDAR.prf.toLocaleString("en-GB")}), and times how long each takes to bounce back, which gives the distance. Add where the aircraft is and which way it points, and every echo becomes a point on the map.</p>
     <p class="gd-meta"><span>About 15 minutes</span><span>All three figures are live: move, hover and click</span><span>Every number comes from one model</span><span>Underlined terms open Wikipedia</span></p>
     <nav class="gd-toc" aria-label="Contents">
       <span class="gd-label">Contents</span>
