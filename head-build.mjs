@@ -641,6 +641,29 @@ function lasers(cfg) {
     cable("fibre.feed", [[-70, -90, 15], [-64, -90, 15], [-64, -56, 15], [-64, -56, 50], [-64, LY, 50], [-58, LY, 50]], 0.6, { bend: 3, shells: [true, false] });
     cable("fibre.lead", [[-96, -66, 13], [-96, -84, 13]], 0.6, { bend: 2 });
   });
+  when("laser:diode", cfg, () => {
+    // a pulsed laser diode: the emitter in a TO-can pressed into a finned aluminium block, its pulser board screwed to
+    // the block's face so the current loop stays short, and a threaded aspheric collimator held on a V-block
+    const F = alongX(LY, ZB);
+    box("diode.riser", [-80, -60, 0], [-66, -40, 36], { tone: "lo" }, { r: 0.4, bevel: 0.3, extra: Dots([at([-73, -40, 4]), at([-73, -40, 32])], { size: 0.45, tone: "mid" }) });
+    box("diode.sink", [-84, -64, 36], [-62, -36, 64], { tone: "mid" }, { r: 0.8, bevel: 0.5, inner: Ln(k.sideSeam({ x: -84, y: -64, w: 22, d: 28, r: 0.8 }, 40, P, 4), { tone: "faint" }) });
+    for (let i = 0; i < 5; i++) box(`diode.fin${i}`, [-82 + i * 4.4, -62, 64], [-80.4 + i * 4.4, -38, 70], { tone: "lo" }, { r: 0 });
+    const board = [[-81, 40], [-65, 40], [-81, 60], [-65, 60]].map(([x, z]) => at([x, -34.4, z]));
+    box("diode.board", [-83, -36, 38], [-63, -34.4, 62], { tone: "lo" }, { r: 0.3, extra: Dots(board, { size: 0.45, tone: "mid" }) + k.faceTextSvg(planeMatrix([-73, -34.4, 56], [1, 0, 0], [0, 0, -1]), "PLD  905 nm", { size: 2.4, tone: "mid", anchor: "middle" }) });
+    for (let i = 0; i < 3; i++) box(`diode.cap${i}`, [-80.5 + i * 3.2, -34.4, 42], [-78.5 + i * 3.2, -33, 47], { tone: "mid" }, { r: 0.2 });
+    box("diode.fet", [-71, -34.4, 43], [-66, -33, 48], { tone: "mid" }, { r: 0.2, extra: Dots([at([-68.5, -33, 45.5])], { size: 0.35, tone: "hi" }) });
+    turned("diode.can", F, [[-62, 4.6], [-61, 4.6], [-61, 3.2], [-58, 3.2]], { tone: "mid" }, { bevel: 0.2 });
+    turned("diode.lens", F, [[-58, 4.6], [-46, 4.6], [-46, 5.4], [-44, 5.4], [-44, 4], [-40, 4]], { tone: "mid" }, {
+      extra: Ln(G.ribsOf(F, -57.5, -46.5, 4.6, 18, P, { seams: true }), { tone: "lo" }) + Ln(G.ribsOf(F, -45.8, -44.2, 5.4, 24, P, { seams: true }), { tone: "lo" }) + Ln(G.arcOf(F, -40, 2.4, P), { tone: "hi" }),
+    });
+    box("diode.vblock", [-56, -54, 0], [-48, -46, 45.4], { tone: "lo" }, { r: 0.4, bevel: 0.3, extra: Dots([at([-52, -46, 3]), at([-52, -46, 42])], { size: 0.45, tone: "mid" }) });
+    box("diode.driver", [-126, -112, 0], [-70, -84, 30], { tone: "mid" }, {
+      r: 0.8,
+      bevel: 0.5,
+      extra: Ln(k.sideSeam({ x: -126, y: -112, w: 56, d: 28, r: 0.8 }, 7, P, 4), { tone: "faint" }) + screws({ x: -126, y: -112, w: 56, d: 28 }, 30, 2.4, 0.5) + faceY([-98, -84, 20], "Diode  905 nm", 3.4) + Dots([at([-121, -84, 22]), at([-117, -84, 22])], { size: 0.6, tone: "hi" }),
+    });
+    cable("diode.cable", [[-74, -84, 16], [-74, -72, 16], [-74, -72, 46], [-74, -64, 46]], 0.9, { shells: [true, true], bend: 3 });
+  });
   beam("beam.a", [[-40, LY, ZB], [-34, LY, ZB]]);
 }
 // ---------------------------------------------------------------- the scanners
@@ -782,12 +805,12 @@ const SCAN_CFGS = [
   { scanner: "risley" },
   { scanner: "flash" },
 ];
-const LASER_IDS = ["yag", "fibre", "green"];
+const LASER_IDS = ["yag", "fibre", "green", "diode"];
 const DET_IDS = ["discrete", "waveform", "photon"];
 export const CONFIGS = [];
 for (const rx of ["inject", "holed"])
   SCAN_CFGS.forEach((s, i) => {
-    for (let j = 0; j < 3; j++) CONFIGS.push({ facets: 4, ...s, laser: LASER_IDS[(i + j) % 3], detector: DET_IDS[(i + 2 * j) % 3], rx });
+    for (let j = 0; j < 3; j++) CONFIGS.push({ facets: 4, ...s, laser: LASER_IDS[(i + j) % LASER_IDS.length], detector: DET_IDS[(i + 2 * j) % 3], rx });
   });
 const tagOf = (cfg) => `${cfg.scanner}${cfg.scanner === "polygon" ? cfg.facets : ""}/${cfg.laser}/${cfg.detector}/${cfg.rx}`;
 
@@ -951,7 +974,7 @@ const SUB = [
   ...["galvo", "polygon", "palmer"].map((id) => ({ key: "rate", label: "Scan freq", unit: HMS[id].unit === "Hz" ? "Hz" : "rev/s", options: HMS[id].rates.map((f) => [f, String(f)]), only: `scanner:${id}` })),
 ];
 const GROUPS = [
-  { title: "Laser", rows: [{ key: "laser", label: "Wavelength", options: [["yag", "1064 nm"], ["fibre", "1550 nm"], ["green", "532 nm"]] }, { key: "prf", label: "Pulse rate (PRF)", options: [[100e3, "100k"], [250e3, "250k"], [500e3, "500k"], [1e6, "1M"], [2e6, "2M"], [4e6, "4M"]] }] },
+  { title: "Laser", rows: [{ key: "laser", label: "Wavelength", options: [["yag", "1064 nm"], ["fibre", "1550 nm"], ["green", "532 nm"], ["diode", "905 nm"]] }, { key: "prf", label: "Pulse rate (PRF)", options: [[100e3, "100k"], [250e3, "250k"], [500e3, "500k"], [1e6, "1M"], [2e6, "2M"], [4e6, "4M"]] }] },
   { title: "Receiver", rows: [{ key: "detector", label: "Detection", options: [["discrete", "Discrete"], ["waveform", "Waveform"], ["photon", "Photon"]] }, { key: "rx", label: "Coaxial mirror", options: [["inject", "Injection"], ["holed", "Holed"]] }] },
   { title: "Navigation", rows: [{ key: "nav", label: "Position and attitude", options: [["ins", "GNSS + IMU"], ["gnss", "GNSS only"], ["none", "None"]] }] },
 ];

@@ -984,7 +984,7 @@ void main(){
     const top = 116;
     const floor = 162;
     // one fixed gain per laser, so a bright roof stands taller than the road beside it
-    const most = { yag: 0.55, fibre: 0.45, green: 0.2 }[cfg.laser] ?? 0.45;
+    const most = { yag: 0.55, fibre: 0.45, green: 0.2, diode: 0.3 }[cfg.laser] ?? 0.45;
     const yS = (v) => floor - clamp(v / most, -0.06, 1) * (floor - top);
     c.strokeStyle = lo;
     c.beginPath();
@@ -1442,8 +1442,9 @@ ${label(R0 + 21, T1 - 12, "TIME", -90, " hd-name")}
       yag: ["A diode-pumped Nd:YAG crystal, Q-switched into nanosecond pulses at 1064 nm. The fins carry away its heat.", "Near-infrared is bright off leaves and soil, so it is the workhorse for terrain and forestry; it stops at a water surface."],
       fibre: ["The pump and seed for an erbium fibre laser at 1550 nm; the fins carry away its heat.", "Fibre lasers fire at MHz rates efficiently. Water absorbs 1550 nm, including the water in the front of the eye, so it is eye-safe at higher power."],
       green: ["An Nd:YAG at 1064 nm whose output is frequency-doubled to 532 nm further down the bench.", "Green light passes through clear water, so the lidar can map the bottom as well as the surface."],
+      diode: ["A semiconductor laser: a current pulse of tens of amps through the diode's junction gives out a few nanoseconds of 905 nm light. The finned block carries away its heat.", "Cheap, small and simple, so it is the laser in most low-cost and automotive lidars. Each pulse is weak and the beam spreads wide, so its range is short and faint surfaces drop out."],
     }[cfg.laser];
-    return { sys: "Transmitter", title: L.name, does: text[0], why: text[1], spec: `${kHz(cfg.prf)} · ${fmt(L.width * 1e9, 1)} ns pulse · ${L.eyeSafe ? "eye-safe" : "not eye-safe"}` };
+    return { sys: "Transmitter", title: L.name, does: text[0], why: text[1], spec: `${kHz(cfg.prf)} · ${fmt(L.width * 1e9, 1)} ns pulse · ${L.safety ?? (L.eyeSafe ? "eye-safe" : "not eye-safe")}` };
   };
   const scanSpec = () => `${fmt(facts.swath)} m swath${facts.lines ? ` · ${facts.scanRate} ${SCANNERS[cfg.scanner].unit} · ${fmt(facts.lines)} lines/s · ${fmt(facts.lineSpacing, 2)} m apart` : ""}`;
   const CARDS = [
@@ -1451,6 +1452,10 @@ ${label(R0 + 21, T1 - 12, "TIME", -90, " hd-name")}
     [/^yag\.nozzle/, () => ({ sys: "Transmitter", title: "Output coupler", does: "The partly reflecting mirror at the end of the cavity that lets each pulse out along the bench.", why: "It sets where the beam starts and how wide it is before the expander.", spec: LASERS[cfg.laser].name })],
     [/^laser\.(driver|cable)/, () => ({ sys: "Transmitter", title: "Laser driver", does: "Feeds the pump diodes and fires the Q-switch on every tick of the timing board.", why: "Its trigger is T0, the instant every range is timed from.", spec: `T0 every ${us(facts.period)} · ${kHz(cfg.prf)}` })],
     [/^laser\./, laserCard],
+    [/^diode\.(driver|cable)/, () => ({ sys: "Transmitter", title: "Diode supply", does: "Charges the pulser's capacitors from the high-voltage rail and passes it the trigger on every tick of the timing board.", why: "Its trigger is T0, the instant every range is timed from.", spec: `T0 every ${us(facts.period)} · ${kHz(cfg.prf)}` })],
+    [/^diode\.(board|cap|fet)/, () => ({ sys: "Transmitter", title: "Pulser board", does: "Capacitors dump through a fast GaN switch into the diode: tens of amps for a few nanoseconds.", why: "The board sits right against the diode because a current loop any longer would stretch the pulse, and a longer pulse blurs the range.", spec: `${fmt(LASERS[cfg.laser].width * 1e9, 1)} ns → ${fmt(facts.rangeRes * 100)} cm range resolution` })],
+    [/^diode\.(lens|vblock)/, () => ({ sys: "Transmitter", title: "Collimating lens", does: "An aspheric lens on a fine thread, focused so the light spreading from the diode's emitter leaves parallel; the V-block holds it on axis.", why: "The emitter is a wide stripe rather than a point, so its beam can't be made as narrow as a solid-state laser's.", spec: `${fmt(LASERS[cfg.laser].div * 1e3, 1)} mrad → footprint ø ${fmt(facts.footprint * 100)} cm` })],
+    [/^diode\./, laserCard],
     [/^green\.oven/, () => ({ sys: "Transmitter", title: "Doubling crystal oven", does: "Holds a nonlinear crystal at a fixed temperature so it converts 1064 nm light into 532 nm.", why: "Green is the colour that travels through water: this is what makes a bathymetric lidar.", spec: "1064 nm in → 532 nm out" })],
     [/^green\.d(ichroic|post|foot)/, () => ({ sys: "Transmitter", title: "Dichroic separator", does: "A coated mirror that passes 532 nm and turns the leftover 1064 nm aside.", why: "Only green leaves the head; the leftover infrared goes into the beam dump.", spec: "passes 532 · reflects 1064" })],
     [/^(green\.dump|beam\.dump)/, () => ({ sys: "Transmitter", title: "Beam dump", does: "A blackened, finned cone that soaks up unwanted light and turns it into heat.", why: "Stray light inside the housing would blind the detector and is an eye hazard.", spec: "absorbs the residual 1064 nm" })],
@@ -1498,7 +1503,7 @@ ${label(R0 + 21, T1 - 12, "TIME", -90, " hd-name")}
     [/^(wall|lip)/, () => ({ sys: "Housing", title: "Sealed housing (cut away)", does: "A ribbed box around the bench; two walls are cut away here.", why: "It keeps light, dust and moisture out and the optics in alignment.", spec: "drawn far larger than real" })],
     [/^plate/, () => ({ sys: "Housing", title: "Optical breadboard", does: "A stiff plate with a grid of tapped holes that every optic bolts to.", why: "Holds the alignment between laser, scanner and telescope in flight.", spec: "tapped grid" })],
     [/^iso\./, () => ({ sys: "Housing", title: "Vibration isolator", does: "Rubber mounts between the housing and the aircraft.", why: "They keep engine and airframe vibration off the optics; the IMU records the attitude that remains.", spec: "one per corner" })],
-    [/^label/, () => ({ sys: "Housing", title: "Nameplate", does: "Model, serial number and laser class.", why: "Laser class says how the beam must be handled on the ground.", spec: LASERS[cfg.laser].eyeSafe ? "eye-safe wavelength" : "laser hazard: not eye-safe" })],
+    [/^label/, () => ({ sys: "Housing", title: "Nameplate", does: "Model, serial number and laser class.", why: "Laser class says how the beam must be handled on the ground.", spec: LASERS[cfg.laser].safety ?? (LASERS[cfg.laser].eyeSafe ? "eye-safe wavelength" : "laser hazard: not eye-safe") })],
     [/^beam/, () => ({ sys: "Optical path", title: "Outgoing beam", does: "The pulse travelling along the bench, through the expander and onto the scanner.", why: "Each pulse becomes one point, or several when it hits layers.", spec: `${LASERS[cfg.laser].nm} nm · ${kHz(cfg.prf)}` })],
   ];
   const cardOf = (name) => CARDS.findIndex(([re]) => re.test(name));

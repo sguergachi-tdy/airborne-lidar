@@ -126,10 +126,13 @@ export const SCANNERS = {
   },
 };
 
+// div: full beam divergence (rad); power: pulse energy relative to the solid-state lasers, which scales every echo
 export const LASERS = {
-  yag: { id: "yag", name: "1064 nm Nd:YAG", nm: 1064, width: 5e-9, ink: "ir", eyeSafe: false, water: "surface" },
-  fibre: { id: "fibre", name: "1550 nm Er fibre", nm: 1550, width: 3e-9, ink: "ir", eyeSafe: true, water: "absorbed" },
-  green: { id: "green", name: "532 nm green", nm: 532, width: 1.5e-9, ink: "green", eyeSafe: false, water: "bottom" },
+  yag: { id: "yag", name: "1064 nm Nd:YAG", nm: 1064, width: 5e-9, ink: "ir", eyeSafe: false, water: "surface", div: 0.25e-3, power: 1 },
+  fibre: { id: "fibre", name: "1550 nm Er fibre", nm: 1550, width: 3e-9, ink: "ir", eyeSafe: true, water: "absorbed", div: 0.5e-3, power: 1 },
+  green: { id: "green", name: "532 nm green", nm: 532, width: 1.5e-9, ink: "green", eyeSafe: false, water: "bottom", div: 0.25e-3, power: 1 },
+  // a pulsed laser diode: cheap and compact, but each pulse is weak and the emitter's wide stripe diverges more
+  diode: { id: "diode", name: "905 nm pulsed diode", nm: 905, width: 4e-9, ink: "ir", eyeSafe: false, safety: "eye-safe only at low pulse energy", water: "surface", div: 2e-3, power: 0.5 },
 };
 
 export const DETECTORS = {
@@ -280,7 +283,7 @@ export function factsOf(cfg) {
     density,
     unambiguous,
     inAir,
-    footprint: H * 0.25e-3 * (cfg.laser === "fibre" ? 2 : 1),
+    footprint: H * L.div,
     rangeRes: (C * L.width) / 2,
     period: 1 / rate,
   };
@@ -293,13 +296,14 @@ export function factsOf(cfg) {
 export function echoesFor(cfg, hit, rnd = Math.random) {
   const L = LASERS[cfg.laser];
   const H = FLIGHT.alt;
-  const leaf = { 532: 0.12, 1064: 0.55, 1550: 0.32 }[L.nm];
-  const soil = { 532: 0.18, 1064: 0.34, 1550: 0.4 }[L.nm];
-  const grass = { 532: 0.08, 1064: 0.45, 1550: 0.26 }[L.nm];
-  const asphalt = { 532: 0.06, 1064: 0.11, 1550: 0.13 }[L.nm];
-  const roof = { 532: 0.24, 1064: 0.42, 1550: 0.38 }[L.nm];
+  const leaf = { 532: 0.12, 905: 0.53, 1064: 0.55, 1550: 0.32 }[L.nm];
+  const soil = { 532: 0.18, 905: 0.31, 1064: 0.34, 1550: 0.4 }[L.nm];
+  const grass = { 532: 0.08, 905: 0.43, 1064: 0.45, 1550: 0.26 }[L.nm];
+  const asphalt = { 532: 0.06, 905: 0.1, 1064: 0.11, 1550: 0.13 }[L.nm];
+  const roof = { 532: 0.24, 905: 0.4, 1064: 0.42, 1550: 0.38 }[L.nm];
   const sp = (lo, hi) => lo + (hi - lo) * rnd();
-  const k = () => sp(0.72, 1.28);
+  // speckle, times the pulse's energy: a weak diode pulse loses the faint echoes under the threshold
+  const k = () => sp(0.72, 1.28) * L.power;
   const g = H + sp(-0.25, 0.25);
   const out = [];
   if (hit.kind === "tree") {
@@ -325,8 +329,8 @@ export function echoesFor(cfg, hit, rnd = Math.random) {
   } else if (hit.kind === "water") {
     // infrared only comes back as a near-vertical glint, and how much depends on the ripples under the spot
     if (L.water !== "bottom" && !hit.glint) return out;
-    const surface = { yag: 0.1, fibre: 0.02, green: 0.16 }[cfg.laser];
-    out.push({ r: H + sp(-0.05, 0.05), a: surface * (L.water === "bottom" ? k() : sp(0.4, 2.4)), s: 0.05, what: "water surface" });
+    const surface = { yag: 0.1, fibre: 0.02, green: 0.16, diode: 0.1 }[cfg.laser];
+    out.push({ r: H + sp(-0.05, 0.05), a: surface * (L.water === "bottom" ? k() : sp(0.4, 2.4) * L.power), s: 0.05, what: "water surface" });
     if (L.water === "bottom") {
       const depth = hit.depth * sp(0.92, 1.08);
       // light slows to c/1.33 in water, so the bottom echo arrives as if 1.33 times deeper, after a round trip of attenuation
