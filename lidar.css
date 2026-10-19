@@ -407,6 +407,19 @@
   color: var(--anatomy-text);
 }
 
+.hd-rx-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hd-xhair {
+  flex: none;
+  fill: none;
+  stroke: var(--anatomy-lit);
+  stroke-width: 1.2;
+}
+
 .hd-map,
 .hd-scope {
   display: block;
