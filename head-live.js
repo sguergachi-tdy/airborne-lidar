@@ -1292,15 +1292,19 @@ void main(){
   for (let l = LSMIN; l <= LSMAX + 1e-6; l += 0.25) tMinor.push(tick(R0 + 13, Number.isInteger(l) ? R0 + 15.4 : R0 + 14.4, tAng(l)));
   const dials = `<svg xmlns="http://www.w3.org/2000/svg" class="iso-svg hd-layer hd-dials" viewBox="0 0 ${D.W} ${D.H}">
 <g class="hd-dial hd-zoom" role="slider" tabindex="0" aria-label="Zoom" aria-valuemin="1" aria-valuemax="${ZMAX}" aria-valuenow="1" aria-valuetext="1×">
-<path class="hd-plate" d="${band(R0 + 13, R0 + 29, Z0 - 6, Z1 + 6)}"/>
+<path class="hd-plate" d="${band(R0 + 13, R0 + 29, Z0 - 6, Z1 + 20)}"/>
 <path class="hd-tick" d="${zMinor.join("")}${zMarks.map((z) => tick(R0 + 13, R0 + 16.5, zAng(Math.log2(z)))).join("")}"/>
+<path class="hd-rule" d="${tick(R0 + 13, R0 + 29, Z1 + 7)}"/>
 ${zMarks.map((z) => label(R0 + 22.5, zAng(Math.log2(z)), `${z}×`, 90)).join("")}
+${label(R0 + 21, Z1 + 13.5, "ZOOM", 90, " hd-name")}
 <path class="hd-index" d=""/></g>
 <g class="hd-dial hd-time" role="slider" tabindex="0" aria-label="Time, slowed down" aria-valuemin="100" aria-valuemax="10000000" aria-valuenow="100" aria-valuetext="÷100">
-<path class="hd-plate" d="${band(R0 + 13, R0 + 29, T1 - 6, T0 + 6)}"/>
+<path class="hd-plate" d="${band(R0 + 13, R0 + 29, T1 - 18, T0 + 6)}"/>
 <path class="hd-tick" d="${tMinor.join("")}"/>
+<path class="hd-rule" d="${tick(R0 + 13, R0 + 29, T1 - 6)}"/>
 <path class="hd-slot" d="M${P2(pol(R0 + 17.6, T1))}A${R0 + 17.6} ${R0 + 17.6} 0 0 1 ${P2(pol(R0 + 17.6, T0))}"/>
 ${[2, 3, 4, 5, 6, 7].map((l) => label(R0 + 25, tAng(l), `÷${slowLabel(10 ** l)}`, -90, " hd-num-t")).join("")}
+${label(R0 + 21, T1 - 12, "TIME", -90, " hd-name")}
 <rect class="hd-thumb" x="-6" y="-3" width="12" height="6" rx="3"/></g></svg>`;
   stage.querySelector(".hd-bezel").insertAdjacentHTML("afterend", dials);
   const zoomDial = stage.querySelector(".hd-zoom");

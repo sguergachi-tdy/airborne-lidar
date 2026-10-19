@@ -789,6 +789,8 @@
 .hd-dial:focus-visible .hd-plate { stroke: var(--anatomy-hi); stroke-width: 1.1; }
 .hd-tick { fill: none; stroke: var(--anatomy-mid); stroke-width: 0.7; stroke-linecap: round; }
 .hd-num { fill: var(--anatomy-muted); font-family: var(--anatomy-mono); font-size: 7.5px; letter-spacing: 0.04em; pointer-events: none; }
+.hd-num.hd-name { fill: var(--anatomy-hi); font-size: 8.5px; font-weight: 600; letter-spacing: 0.2em; }
+.hd-rule { fill: none; stroke: var(--anatomy-lo); stroke-width: 0.8; }
 .hd-index { fill: var(--anatomy-lit); }
 .hd-slot { fill: none; stroke: var(--anatomy-paper); stroke-width: 4.4; stroke-linecap: round; }
 .hd-thumb { fill: var(--anatomy-hi); stroke: var(--anatomy-paper); stroke-width: 0.8; }
