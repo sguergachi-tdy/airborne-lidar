@@ -140,13 +140,13 @@ export const DETECTORS = {
 
 export const PRFS = [100e3, 250e3, 500e3, 1e6, 2e6, 4e6];
 export const FACETS = [3, 4, 5, 6, 7, 8];
-export const RATIOS = [-1, 1, -0.9, 0.9, -1.5];
-
 export const defaults = { scanner: "galvo", facets: 4, ratio: -1, phase: 0, laser: "yag", prf: 250e3, detector: "discrete", rate: 50, rx: "inject", nav: "ins" };
 
 // The scan frequency in use: the chosen one if this scanner offers it, else the scanner's own default.
+// A Risley pair may instead set each prism's speed: rate1 for the first, and rate2, signed, for the second.
 export function rateOf(cfg) {
   const S = SCANNERS[cfg.scanner];
+  if (cfg.scanner === "risley" && cfg.rate1 > 0) return cfg.rate1;
   return S.rates.includes(cfg.rate) ? cfg.rate : S.rate;
 }
 
@@ -154,8 +154,12 @@ export function poseOf(cfg, t) {
   const S = SCANNERS[cfg.scanner];
   const f = rateOf(cfg);
   if (cfg.scanner === "polygon") return S.pose(t, cfg.facets, f);
-  if (cfg.scanner === "risley") return S.pose(t, cfg.ratio, cfg.phase, f);
+  if (cfg.scanner === "risley") return S.pose(t, ratioOf(cfg), cfg.phase, f);
   return S.pose(t, f);
+}
+// the second prism's speed as a multiple of the first's; negative turns the other way
+export function ratioOf(cfg) {
+  return cfg.rate2 != null && cfg.rate1 > 0 ? cfg.rate2 / cfg.rate1 : cfg.ratio ?? -1;
 }
 
 // Where the beam lands on flat ground, in metres, relative to the point under the aircraft at time t.
@@ -217,6 +221,12 @@ export function cycleOf(cfg) {
   const f = rateOf(cfg);
   if (cfg.scanner === "polygon") return 1 / f;
   if (cfg.scanner === "risley") {
+    // whole turns a second on both prisms: the pattern repeats when both have made whole turns
+    const f2 = Math.abs(cfg.rate2 ?? NaN);
+    if (cfg.rate1 > 0 && Number.isInteger(f2) && Number.isInteger(cfg.rate1)) {
+      const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+      return 1 / gcd(cfg.rate1, f2);
+    }
     const r = Math.abs(cfg.ratio);
     const den = Math.abs(r - Math.round(r)) < 1e-6 ? 1 : 10;
     return den / f;

@@ -499,8 +499,9 @@
   color: var(--anatomy-muted);
   white-space: nowrap;
 }
-
-/* the chosen scanner's own settings, in a panel that points up at it */
+.hd-phase ~ .hd-unit {
+  flex: 0 0 5.5ch;
+}
 .hd-sub {
   position: relative;
   display: grid;

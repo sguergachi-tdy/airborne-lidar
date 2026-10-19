@@ -487,8 +487,11 @@ function spectrumAt(table, nm) {
 }
 export function wavelengthFig(LASERS) {
   const out = [];
-  const lasers = [LASERS.green, LASERS.yag, LASERS.fibre];
+  // the 905 nm pulsed diode is not one of Figure 2's lasers, so it is only charted here
+  const lasers = [LASERS.green, { nm: 905 }, LASERS.yag, LASERS.fibre];
   const X = (nm) => 200 + ((nm - 400) / 1300) * 340;
+  // table columns: green and fibre sit under their lines; 905 and 1064 are too close, so the four are spaced evenly
+  const COL = [0, 1, 2, 3].map((i) => X(532) + (i * (X(1550) - X(532))) / 3);
   const Y = (r) => 190 - r * 150;
   const pct = (r) => `${Math.round(r * 100)} %`;
   // spectrum: axes, the visible band, the three curves and where each laser cuts them
@@ -505,28 +508,28 @@ export function wavelengthFig(LASERS) {
     return line(pts, tone, cls);
   };
   out.push(curve("soil", "s"), curve("snow", "s", " dash"), curve("leaves", "h"));
-  out.push(text([X(820), Y(0.9) - 10], "snow", "lb"), text([X(880), Y(0.53) - 10], "leaves", "lb hd"), text([X(1700), Y(0.4) - 9], "soil", "lb", "end"));
+  out.push(text([X(820), Y(0.9) - 10], "snow", "lb"), text([X(790), Y(0.53) - 10], "leaves", "lb hd"), text([X(1700), Y(0.4) - 9], "soil", "lb", "end"));
   for (const L of lasers) for (const key of Object.keys(SPECTRA)) out.push(dot([X(L.nm), Y(spectrumAt(SPECTRA[key], L.nm))], 2.4, "a"));
   // the table: what each laser gets back. Dot area follows the share of light returned
   const top = 244;
-  out.push(text([X(532), top], "green", "lb hd"), text([X(1064), top], "Nd:YAG", "lb hd"), text([X(1550), top], "Er fibre", "lb hd"));
+  ["green", "diode", "Nd:YAG", "Er fibre"].forEach((name, i) => out.push(text([COL[i], top], name, "lb hd")));
   out.push(line([[0, top + 12], [X(1700), top + 12]], "f"));
   const at = (key) => lasers.map((L) => ({ r: spectrumAt(SPECTRA[key], L.nm) }));
   const rows = [
     ["Leaves", at("leaves")],
     ["Bare soil", at("soil")],
-    ["Asphalt", [{ r: 0.06 }, { r: 0.1 }, { r: 0.12 }]],
+    ["Asphalt", [{ r: 0.06 }, { r: 0.09 }, { r: 0.1 }, { r: 0.12 }]],
     ["Snow and ice", at("snow")],
-    ["Water surface", [{ r: 0.05, note: "weak" }, { r: 0.05, note: "near nadir" }, { note: "mostly gaps" }]],
-    ["Bed under water", [{ r: 0.12, note: "15 m" }, { note: "6 cm" }, { note: "0.6 mm" }]],
-    ["Through cloud", [{ note: "blocked" }, { note: "blocked" }, { note: "blocked" }]],
+    ["Water surface", [{ r: 0.05, note: "weak" }, { r: 0.05, note: "near nadir" }, { r: 0.05, note: "near nadir" }, { note: "mostly gaps" }]],
+    ["Bed under water", [{ r: 0.12, note: "15 m" }, { note: "10 cm" }, { note: "6 cm" }, { note: "0.6 mm" }]],
+    ["Through cloud", [{ note: "blocked" }, { note: "blocked" }, { note: "blocked" }, { note: "blocked" }]],
   ];
   let y = top + 34;
   for (const [label, cells] of rows) {
     const noted = cells.some((c) => c.note);
     out.push(text([0, y + 4], label, "lb hd", "start"));
     cells.forEach((c, i) => {
-      const x = X(lasers[i].nm);
+      const x = COL[i];
       if (c.r == null) out.push(ring([x, y], 4, "s"));
       else out.push(dot([x, y], n(1.6 + 8 * Math.sqrt(c.r)), "a"));
       if (c.r != null && !c.note) out.push(text([x + 15, y + 4], pct(c.r), "lb", "start"));
@@ -535,7 +538,7 @@ export function wavelengthFig(LASERS) {
     y += noted ? 44 : 30;
   }
   out.push(line([[0, y - 12], [X(1700), y - 12]], "f"));
-  return svg(560, y - 4, "Typical reflectance of leaves, bare soil and snow from 400 to 1700 nanometres, with the three lidar wavelengths marked, and below, what each wavelength gets back. Green, 532 nm: leaves 12 %, soil 17 %, snow 96 %, and it reaches the bed through clear water. Nd:YAG, 1064 nm: leaves about 50 %, soil 32 %, snow 62 %, water only near nadir. Er fibre, 1550 nm: leaves 29 %, soil 37 %, snow about 5 %, water mostly gaps. None of them see through cloud.", out);
+  return svg(560, y - 4, "Typical reflectance of leaves, bare soil and snow from 400 to 1700 nanometres, with the four lidar wavelengths marked, and below, what each wavelength gets back. Green, 532 nm: leaves 11 %, soil 15 %, snow 97 %, and it reaches the bed through clear water. Diode, 905 nm: leaves 53 %, soil 29 %, snow 82 %, water only near nadir. Nd:YAG, 1064 nm: leaves 50 %, soil 32 %, snow 62 %, water only near nadir. Er fibre, 1550 nm: leaves 29 %, soil 38 %, snow about 5 %, water mostly gaps. None of them see through cloud.", out);
 }
 
 // ---------------------------------------------------------------- each scanner's pattern on the ground, seen from above

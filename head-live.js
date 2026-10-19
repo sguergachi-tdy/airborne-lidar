@@ -12,11 +12,10 @@
   const items = [...stage.querySelectorAll(".hd-front .it[data-when]")];
   const rows = [...fig.querySelectorAll(".hd-row[data-only]")];
   const segs = [...fig.querySelectorAll(".hd-seg")];
-  const phaseIn = fig.querySelector(".hd-phase");
+  const slides = [...fig.querySelectorAll("input[data-slide]")];
   const sub = fig.querySelector(".hd-sub");
   const subTitle = fig.querySelector('[data-part="sub-title"]');
   const scanSeg = fig.querySelector('.hd-seg[data-key="scanner"]');
-  const phaseOut = fig.querySelector(".hd-phase-out");
   const mapCanvas = fig.querySelector(".hd-map");
   const scopeCanvas = fig.querySelector(".hd-scope");
   const mapNote = fig.querySelector('[data-part="map-note"]');
@@ -31,7 +30,9 @@
   const C = HM.physics.C;
   const DEG = HM.physics.DEG;
   const HX = HPARTS.HEADX;
-  const cfg = { ...HM.defaults };
+  const cfg = { ...HM.defaults, rate1: SCANNERS.risley.rate, rate2: -SCANNERS.risley.rate };
+  const sgn = (v) => (v > 0 ? `+${v}` : v < 0 ? `−${-v}` : "0");
+  const slideText = (key) => (key === "rate2" ? sgn(cfg.rate2) : `${cfg[key]}`);
 
   // one clock: tr is the head's own time, which runs `slow` times slower than the page (×100 by default, down to
   // ×10 million on the time slider, where single pulses can be followed to the ground and back)
@@ -1118,8 +1119,8 @@ void main(){
   }
   function sentence() {
     const S = SCANNERS[cfg.scanner];
-    const name = cfg.scanner === "polygon" ? `${cfg.facets}-facet polygon` : cfg.scanner === "risley" ? `Risley prisms at ${cfg.ratio > 0 ? "+" : "−"}${Math.abs(cfg.ratio)}, phase ${cfg.phase}°` : S.name;
-    const lines = facts.lines ? ` at ${facts.scanRate} ${S.unit === "Hz" ? "Hz" : "turns a second"}, ${fmt(facts.lines)} scan lines a second ${fmt(facts.lineSpacing, 2)} m apart, ${fmt(facts.perLine)} shots a line` : "";
+    const name = cfg.scanner === "polygon" ? `${cfg.facets}-facet polygon` : cfg.scanner === "risley" ? `Risley prisms turning ${cfg.rate1} and ${sgn(cfg.rate2)} times a second, phase ${cfg.phase}°` : S.name;
+    const lines = facts.lines && cfg.scanner !== "risley" ? ` at ${facts.scanRate} ${S.unit === "Hz" ? "Hz" : "turns a second"}, ${fmt(facts.lines)} scan lines a second ${fmt(facts.lineSpacing, 2)} m apart, ${fmt(facts.perLine)} shots a line` : "";
     return `${name}${lines}, ${LASERS[cfg.laser].name} at ${kHz(cfg.prf)}, ${DETECTORS[cfg.detector].name.toLowerCase()}, navigation ${HM.NAVS[cfg.nav].name}: ${fmt(facts.swath)} m swath, ${dens(facts.density)} points per square metre, ${facts.inAir} pulse${facts.inAir > 1 ? "s" : ""} in the air, unambiguous to ${fmt(facts.unambiguous)} m.`;
   }
   function apply(announce) {
@@ -1127,8 +1128,10 @@ void main(){
     for (const row of rows) row.hidden = !matches(row.dataset.only);
     for (const seg of segs) for (const b of seg.querySelectorAll("button")) b.setAttribute("aria-checked", String(b.dataset.value) === String(cfg[seg.dataset.key]) ? "true" : "false");
     placeNotch();
-    phaseIn.value = cfg.phase;
-    phaseOut.textContent = `${cfg.phase}°`;
+    for (const el of slides) {
+      el.value = cfg[el.dataset.slide];
+      fig.querySelector(`output[data-out="${el.dataset.slide}"]`).textContent = slideText(el.dataset.slide);
+    }
     stage.dataset.ink = LASERS[cfg.laser].ink;
     RAMP = RAMPS[LASERS[cfg.laser].ink];
     for (const el of [stage, ...document.querySelectorAll(".hd-key")]) RAMP.forEach((v, i) => el.style.setProperty(`--hd-r${i + 1}`, `rgb(${v})`));
@@ -1171,7 +1174,7 @@ void main(){
       const b = event.target.closest("button");
       if (!b) return;
       const key = seg.dataset.key;
-      cfg[key] = ["facets", "ratio", "prf", "rate"].includes(key) ? Number(b.dataset.value) : b.dataset.value;
+      cfg[key] = ["facets", "prf", "rate"].includes(key) ? Number(b.dataset.value) : b.dataset.value;
       // each scanner starts at its own usual frequency
       if (key === "scanner") cfg.rate = SCANNERS[cfg.scanner].rate;
       apply(true);
@@ -1194,11 +1197,13 @@ void main(){
     said.textContent = paused ? "Simulation paused." : "Running.";
     kick();
   }
-  phaseIn.addEventListener("input", () => {
-    cfg.phase = Number(phaseIn.value);
-    apply(false);
-  });
-  phaseIn.addEventListener("change", () => (said.textContent = sentence()));
+  for (const el of slides) {
+    el.addEventListener("input", () => {
+      cfg[el.dataset.slide] = Number(el.value);
+      apply(false);
+    });
+    el.addEventListener("change", () => (said.textContent = sentence()));
+  }
   const zoomTo = (v) => {
     lzT = clamp(v, 0, LZMAX);
     said.textContent = `Zoom ${fmt(2 ** lzT, 1)}×`;
@@ -1435,7 +1440,7 @@ ${label(R0 + 21, T1 - 12, "TIME", -90, " hd-name")}
     const L = LASERS[cfg.laser];
     const text = {
       yag: ["A diode-pumped Nd:YAG crystal, Q-switched into nanosecond pulses at 1064 nm. The fins carry away its heat.", "Near-infrared is bright off leaves and soil, so it is the workhorse for terrain and forestry; it stops at a water surface."],
-      fibre: ["The pump and seed for an erbium fibre laser at 1550 nm; the fins carry away its heat.", "Fibre lasers fire at MHz rates efficiently, and 1550 nm is eye-safe at higher power; water absorbs it."],
+      fibre: ["The pump and seed for an erbium fibre laser at 1550 nm; the fins carry away its heat.", "Fibre lasers fire at MHz rates efficiently. Water absorbs 1550 nm, including the water in the front of the eye, so it is eye-safe at higher power."],
       green: ["An Nd:YAG at 1064 nm whose output is frequency-doubled to 532 nm further down the bench.", "Green light passes through clear water, so the lidar can map the bottom as well as the surface."],
     }[cfg.laser];
     return { sys: "Transmitter", title: L.name, does: text[0], why: text[1], spec: `${kHz(cfg.prf)} · ${fmt(L.width * 1e9, 1)} ns pulse · ${L.eyeSafe ? "eye-safe" : "not eye-safe"}` };
@@ -1454,18 +1459,18 @@ ${label(R0 + 21, T1 - 12, "TIME", -90, " hd-name")}
     [/^fibre\.(hub|flange)/, () => ({ sys: "Transmitter", title: "Gain fibre spool", does: "Metres of active fibre wound on a drum so the amplifier stays compact.", why: "A long gain path builds power without a large crystal or water cooling.", spec: "erbium-doped fibre" })],
     [/^fibre\.(collimator|vblock)/, () => ({ sys: "Transmitter", title: "Fibre collimator", does: "A lens that turns the light diverging from the fibre tip into a parallel beam; the V-block holds it on axis.", why: "Free-space optics downstream need a straight, parallel beam.", spec: "fibre → free space" })],
     [/^fibre\./, () => ({ sys: "Transmitter", title: "Delivery fibre", does: "Armoured fibre that carries the amplified light from the spool to the collimator.", why: "It lets the laser sit anywhere on the bench without mirrors to align.", spec: "1550 nm" })],
-    [/^expander/, () => ({ sys: "Transmitter", title: "Beam expander (collimator)", does: "A Galilean telescope: a small negative lens spreads the laser's beam and a larger positive lens collimates it again, several times wider and parallel.", why: "A wider, collimated beam diverges less: divergence sets the footprint each pulse lights on the ground.", spec: `footprint ø ${fmt(facts.footprint * 100)} cm at ${FLIGHT.alt} m` })],
+    [/^expander/, () => ({ sys: "Transmitter", title: "Beam expander", does: "A Galilean telescope: a small negative lens spreads the laser's beam and a larger positive lens collimates it again, several times wider and parallel.", why: "A wider, collimated beam diverges less: divergence sets the footprint each pulse lights on the ground.", spec: `footprint ø ${fmt(facts.footprint * 100)} cm at ${FLIGHT.alt} m` })],
     [/^holed\.(mirror|cell|post|foot)/, () => ({ sys: "Optical path", title: "Holed (scraper) mirror", does: "A 45° mirror with a small hole on the axis: the pulse leaves through the hole, and the wide echo coming back reflects off the annulus into the telescope.", why: "Transmit and receive share one axis with no beam splitter; only the centre of the echo is lost back through the hole.", spec: `ø ${D.holed.hole * 2} hole · ${fmt(100 - 100 * (D.holed.hole / 9) ** 2)}% of the echo kept` })],
     [/^inject/, () => (cfg.rx === "holed"
       ? { sys: "Optical path", title: "Turning mirror", does: "Turns the expanded beam from the laser onto the scanner's axis, aimed through the hole in the scraper mirror.", why: "Every optic downstream shares this one axis, so the telescope looks where the laser points.", spec: "fixed, 45°" }
       : { sys: "Optical path", title: "Injection mirror", does: "A small mirror in the middle of the receive path that puts the outgoing pulse onto the scanner's axis.", why: "Transmit and receive share one axis, so the telescope always looks where the laser points; the mirror shades only the centre of the echo.", spec: `coaxial · ${fmt(100 - 100 * (3.5 / 9) ** 2)}% of the echo kept` })],
     [/^fold/, () => ({ sys: "Optical path", title: "Fold mirror", does: "A fixed mirror that turns the beam down through the window.", why: "With prisms or a diffuser there is no scanning mirror, so this one does the turning.", spec: "fixed, 45°" })],
-    [/^galvo\.encoder/, () => ({ sys: "Scanner", title: "Angle encoder", does: "Reads the mirror's angle at the moment of every shot.", why: "Each point needs its beam direction; combined with GNSS/IMU pose it puts the point on the map.", spec: `±${SCANNERS.galvo.half}° · ${facts.scanRate} Hz` })],
+    [/^galvo\.encoder/, () => ({ sys: "Scanner", title: "Angle encoder", does: "Reads the mirror's angle at the moment of every shot.", why: "Each point needs its beam direction; combined with the POS trajectory it puts the point on the map.", spec: `±${SCANNERS.galvo.half}° · ${facts.scanRate} Hz` })],
     [/^(galvo|poly|palmer|risley)[.\d]*.*cable|^cable\.drive/, () => ({ sys: "Scanner", title: "Scanner drive cable", does: "Carries motor current one way and the encoder signal back.", why: "The angle must reach the timing board in step with every shot.", spec: "drive + encoder" })],
     [/^galvo\./, () => ({ sys: "Scanner", title: "Galvanometer scanner", does: "A moving-magnet motor swings a light mirror back and forth.", why: "It sweeps the beam across track while the aircraft's motion supplies the along-track step; points bunch at the edges where it turns.", spec: scanSpec() })],
     [/^poly/, () => ({ sys: "Scanner", title: `${cfg.facets}-facet polygon`, does: "A mirrored prism spinning at constant speed; each facet sweeps one line, all in the same direction.", why: "Evenly spaced points with no turnaround; fewer facets give longer lines, more facets give more lines a second.", spec: `${scanSpec()} · ${fmt(facts.duty * 100)}% duty` })],
     [/^palmer/, () => ({ sys: "Scanner", title: "Palmer scanner", does: `A mirror tilted ${SCANNERS.palmer.tilt}° on a spinning shaft, so the beam traces a cone.`, why: "Its ellipses look forward and back, so every spot is seen twice, from two angles.", spec: scanSpec() })],
-    [/^risley/, () => ({ sys: "Scanner", title: "Risley prism pair", does: `Two ${SCANNERS.risley.wedge}° glass wedges turning on the beam; their deflections add.`, why: "Rate ratio and phase choose a line, a circle or a rosette, with no part that swings back and forth.", spec: `${facts.scanRate} rev/s · ratio ${cfg.ratio > 0 ? "+" : "−"}${Math.abs(cfg.ratio)} · phase ${cfg.phase}° · ${fmt(facts.swath)} m` })],
+    [/^risley/, () => ({ sys: "Scanner", title: "Risley prism pair", does: `Two ${SCANNERS.risley.wedge}° glass wedges turning on the beam; their deflections add.`, why: "The two prisms' speeds, directions and phase choose the pattern: equal and opposite give a line, equal and together a circle, nearly equal a spiral, and others a rosette, with no part that swings back and forth.", spec: `${cfg.rate1} and ${sgn(cfg.rate2)} rev/s · phase ${cfg.phase}° · ${fmt(facts.swath)} m` })],
     [/^flash/, () => ({ sys: "Scanner", title: "Flash diffuser", does: "Spreads each pulse over the whole field of view.", why: "Every pixel of the detector array times its own echo: a full 3D frame per pulse, no moving parts.", spec: `${SCANNERS.flash.grid}×${SCANNERS.flash.grid} px · ${fmt(facts.frames)} frames/s` })],
     [/^drive/, () => ({ sys: "Scanner", title: "Scanner drive", does: "Servo electronics that power the scanner and hold its motion to the commanded profile.", why: "A steady angle profile keeps point spacing predictable.", spec: scanSpec() })],
     [/^scope/, () => ({ sys: "Receiver", title: "Receiving telescope", does: "A cemented objective focuses the echo through a pinhole field stop; a relay lens re-collimates it through a narrowband filter, and a last lens focuses it onto the detector. Zoom in to see the section.", why: `An echo from ${FLIGHT.alt} m is many orders of magnitude weaker than the pulse, so collecting area counts; the pinhole and filter shut out sunlight from everywhere but the lit spot and the laser's line.`, spec: `round trip ${us((2 * FLIGHT.alt) / C)} · filter at ${LASERS[cfg.laser].name}` })],
@@ -1479,15 +1484,15 @@ ${label(R0 + 21, T1 - 12, "TIME", -90, " hd-name")}
     [/^imu\.|^bulkimu|^cable\.imu/, () => {
       const a = HM.attitudeOf(tr);
       const sg = (v) => `${v < 0 ? "−" : "+"}${Math.abs(v / DEG).toFixed(1).padStart(4, "\u2007")}°`;
-      return { sys: "Navigation", title: "Inertial measurement unit", does: "Three fibre-optic gyros and three accelerometers on one block, read 200 times a second; the cable takes them to the GNSS/INS computer, which blends them with GNSS in a Kalman filter.", why: `The aircraft rolls, pitches and yaws in every gust, and 1° of roll moves a point ${fmt(FLIGHT.alt * Math.tan(DEG), 1)} m at ${FLIGHT.alt} m. It is bolted to the same bench as the scanner: the lever arm and boresight to it are measured once and never change.`, spec: `roll ${sg(a.roll)} · pitch ${sg(a.pitch)} · yaw ${sg(a.yaw)}` };
+      return { sys: "Navigation", title: "Inertial measurement unit", does: "Three fibre-optic gyros and three accelerometers on one block, read 200 times a second; the cable takes them to the POS computer, which blends them with GNSS in a Kalman filter.", why: `The aircraft rolls, pitches and yaws in every gust, and 1° of roll moves a point ${fmt(FLIGHT.alt * Math.tan(DEG), 1)} m at ${FLIGHT.alt} m. It is bolted to the same bench as the scanner: the lever arm and boresight to it are measured once and never change.`, spec: `roll ${sg(a.roll)} · pitch ${sg(a.pitch)} · yaw ${sg(a.yaw)}` };
     }],
-    [/^rx\.pps|^bulkpps|^cable\.pps/, () => ({ sys: "Navigation", title: "PPS time input", does: "A pulse once a second from the GNSS receiver, on the edge of each GPS second, plus the time message that names it.", why: "The timing board stamps every shot in GPS time, so each range and scan angle can be matched to the trajectory's position and attitude at that instant.", spec: `1 pulse/s · shots ${us(facts.period)} apart` })],
+    [/^rx\.pps|^bulkpps|^cable\.pps/, () => ({ sys: "Navigation", title: "PPS time input", does: "A pulse once a second from the GNSS receiver, on the edge of each GPS second, plus the time message that names it.", why: "The sensor logs every shot on its own clock and records when each pulse arrived; after the flight the shot times are converted to GPS time, so each range and scan angle is matched to the trajectory at that instant.", spec: `1 pulse/s · shots ${us(facts.period)} apart` })],
     [/^rx\./, () => ({ sys: "Receiver", title: "Timing board", does: "Holds the receiver electronics and takes T0 from the laser.", why: "Every range is a time measured on this board.", spec: `T0 every ${us(facts.period)}` })],
     [/^psu/, () => ({ sys: "Power", title: "Power supply", does: "Turns the aircraft's 28 V bus into clean rails for the laser, scanner and receiver; the LED shows it is on.", why: "Noise on the rails shows up as timing jitter and range noise.", spec: "28 V DC in" })],
     [/^dry/, () => ({ sys: "Housing", title: "Desiccant cartridge", does: "Silica gel behind a small window; it changes colour when it is spent.", why: "Keeps the sealed housing dry so the optics don't fog as the aircraft climbs into cold air.", spec: "check before flight" })],
     [/^relief/, () => ({ sys: "Housing", title: "Pressure relief valve", does: "Lets the sealed housing breathe as outside pressure changes with altitude.", why: "Spares the window and seals from stress in climbs and descents.", spec: "venting valve" })],
     [/^bulk/, () => ({ sys: "Housing", title: "Bulkhead connector", does: "Carries power and data through the sealed wall.", why: "Cables pass in without breaking the seal.", spec: "sealed, panel-mounted" })],
-    [/^cable\.data/, () => ({ sys: "Data", title: "Data harness", does: "Takes ranges, angles and timestamps to the logger.", why: "There they are merged with GNSS/IMU position and attitude to become map points.", spec: `${kHz(cfg.prf)} shot stream` })],
+    [/^cable\.data/, () => ({ sys: "Data", title: "Data harness", does: "Takes ranges, angles and timestamps to the sensor computer.", why: "After the flight they are merged with the POS trajectory to become map points.", spec: `${kHz(cfg.prf)} shot stream` })],
     [/^cable\.power/, () => ({ sys: "Power", title: "Power harness", does: "Brings aircraft power in to the supply.", why: "The laser and scanner draw the most current.", spec: "28 V DC" })],
     [/^window/, () => ({ sys: "Housing", title: "Optical window", does: "A flat coated glass port in the floor, held to a seal by clamp strips.", why: "Seals the head against dust and moisture while passing both the pulse and its echo.", spec: `${LASERS[cfg.laser].nm} nm coating` })],
     [/^(wall|lip)/, () => ({ sys: "Housing", title: "Sealed housing (cut away)", does: "A ribbed box around the bench; two walls are cut away here.", why: "It keeps light, dust and moisture out and the optics in alignment.", spec: "drawn far larger than real" })],

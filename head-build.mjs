@@ -948,8 +948,7 @@ const SCANNER = { key: "scanner", label: "Scanner", options: [["galvo", "Galvo"]
 const SUB = [
   { key: "facets", label: "Facets", options: [3, 4, 5, 6, 7, 8].map((n) => [n, String(n)]), only: "scanner:polygon" },
   // scan frequency: what one turn or swing means differs by scanner, so each offers its own real range
-  ...["galvo", "polygon", "palmer", "risley"].map((id) => ({ key: "rate", label: "Scan freq", unit: HMS[id].unit === "Hz" ? "Hz" : "rev/s", options: HMS[id].rates.map((f) => [f, String(f)]), only: `scanner:${id}` })),
-  { key: "ratio", label: "Prism ratio", options: [[-1, "−1"], [1, "+1"], [-0.9, "−0.9"], [0.9, "+0.9"], [-1.5, "−1.5"]], only: "scanner:risley" },
+  ...["galvo", "polygon", "palmer"].map((id) => ({ key: "rate", label: "Scan freq", unit: HMS[id].unit === "Hz" ? "Hz" : "rev/s", options: HMS[id].rates.map((f) => [f, String(f)]), only: `scanner:${id}` })),
 ];
 const GROUPS = [
   { title: "Laser", rows: [{ key: "laser", label: "Wavelength", options: [["yag", "1064 nm"], ["fibre", "1550 nm"], ["green", "532 nm"]] }, { key: "prf", label: "Pulse rate (PRF)", options: [[100e3, "100k"], [250e3, "250k"], [500e3, "500k"], [1e6, "1M"], [2e6, "2M"], [4e6, "4M"]] }] },
@@ -960,7 +959,10 @@ const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").repl
 const segOf = (b) => `<div class="hd-seg" role="radiogroup" aria-label="${esc(b.label)}" data-key="${b.key}">${b.options.map(([v, l]) => `<button type="button" role="radio" data-value="${esc(v)}">${l}</button>`).join("")}</div>`;
 const controlsHtml = () => {
   const sub = SUB.map((b) => `<div class="hd-row" data-only="${b.only}"><span class="hd-row-label">${b.label}</span>${segOf(b)}${b.unit ? `<span class="hd-unit">${b.unit}</span>` : ""}</div>`).join("");
-  const phase = `<div class="hd-row" data-only="scanner:risley"><span class="hd-row-label">Phase</span><input class="hd-phase" type="range" min="0" max="360" step="5" value="0" aria-label="Second prism phase, degrees"><output class="hd-phase-out">0°</output></div>`;
+  // the Risley pair: each prism's own speed (the second signed, against the first's direction) and the phase between them
+  const slide = (key, label, min, max, step, value, aria, unit = "") => `<div class="hd-row" data-only="scanner:risley"><span class="hd-row-label">${label}</span><input class="hd-phase" data-slide="${key}" type="range" min="${min}" max="${max}" step="${step}" value="${value}" aria-label="${aria}"><output class="hd-phase-out" data-out="${key}"></output>${unit ? `<span class="hd-unit">${unit}</span>` : ""}</div>`;
+  const r = HMS.risley.rate;
+  const phase = slide("rate1", "Prism 1", 1, 40, 1, r, "First prism speed, turns a second", "rev/s") + slide("rate2", "Prism 2", -40, 40, 1, -r, "Second prism speed, turns a second; negative turns the other way", "rev/s") + slide("phase", "Phase", 0, 360, 5, 0, "Second prism phase, degrees", "deg");
   const flash = `<div class="hd-row hd-sub-note" data-only="scanner:flash">No moving scanner: each pulse lights a whole ${HMS.flash.grid}×${HMS.flash.grid} frame.</div>`;
   const scanner = `<div class="hd-group hd-group-scan" role="group" aria-label="Scanner"><div class="hd-group-title">Scanner</div>${segOf(SCANNER)}<div class="hd-sub"><div class="hd-sub-title" data-part="sub-title"></div>${sub}${phase}${flash}</div></div>`;
   const rest = GROUPS.map((g) => `<div class="hd-group" role="group" aria-label="${g.title}"><div class="hd-group-title">${g.title}</div>${g.rows.map((b) => `<div class="hd-field"><span class="hd-field-label">${b.label}</span>${segOf(b)}</div>`).join("")}</div>`).join("");

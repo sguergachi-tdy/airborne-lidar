@@ -491,7 +491,7 @@ box("imu", [-32, 8, 210], [-18, 20, 217], { tone: "mid" }, {
   extra: Ln(k.planOutline(k.insetPlan({ x: -32, y: 8, w: 14, d: 12, r: 0.6 }, 2), 217, P, 2), { tone: "faint" }) + Dots(k.corners({ x: -32, y: 8, w: 14, d: 12 }, 1.2).map(([x, y]) => at([x, y, 217])), { size: 0.35, tone: "lo" }),
 });
 
-// the navigation computer on an equipment tray on the near seat track: GNSS/INS, logger and the operator's live display
+// the control rack on an equipment tray on the near seat track: POS and sensor computers and the operator's live display
 // in one box, with the monitor on its stand
 const TRAY = { x: -94, y: 30, w: 34, d: 30, r: 0.8 };
 const DCU_Z = TRACK_Z + 2;
@@ -517,7 +517,7 @@ const uA = (t) => SCOPE.a.u0 + ((t - SCOPE.a.t0) / (SCOPE.a.t1 - SCOPE.a.t0)) * 
 box("nav.monitor", [MON.x0, MON.y0, MON.z0], [MON.x1, MON.y1, MON.z1], { tone: "lo" }, { r: 0.6, bevel: 0.4, extra: `<g data-part="screen-host"></g>` });
 
 // cables inside the housing end on the bulkhead receptacles; one harness (ranges, encoder, IMU out; PPS in) runs out
-// through the near corner to the navigation computer
+// through the near corner to the control rack
 const SOCK = X0 + WALL + 1;
 cable("cable.apd", [[3, -53.5, 225], [3, -57.5, 225], [48, -57.5, 225], [48, 11, 225], [37, 11, 225], [37, 11, 214.8]], 0.55, { shells: [true, false], bend: 2 });
 cable("cable.t0", [[10.5, -12, 220], [10.5, 5, 220], [10.5, 5, 215.4]], 0.45);
@@ -531,7 +531,7 @@ box("nav.socket", [DCU.x1, 48, DCU_Z + 2], [DCU.x1 + 1, 52, DCU_Z + 6], { tone: 
 cable("cable.harness", [[-44, Y1 + 1, 222], [-44, 50, 222], [-44, 50, DCU_Z + 4], [DCU.x1 + 1, 50, DCU_Z + 4]], 0.9, { shells: [true, true], bend: 4 });
 
 // navigation: a GNSS antenna on a riveted doubler just below the crown cut, its coax through a lightning arrestor and
-// down the inside of the far wall and across the floor to the navigation computer, which blends GNSS fixes with the IMU
+// down the inside of the far wall and across the floor to the POS computer in the control rack, which blends GNSS fixes with the IMU
 // and sends a pulse per second back up the harness to the timing board
 const NAV = { x: -66, deg: 118, coax: 75.6 };
 {
@@ -712,7 +712,7 @@ const bigScope = (() => {
 }
 
 const LABEL_TEXT =
-  "A cutaway section of a survey aircraft's fuselage, its top and near side cut away to show frames, windows and the cabin floor. On the floor a lidar head sits in a housing, itself cut open, on a stabilised mount bolted to the seat tracks, with a GNSS antenna on the fuselage above and a GNSS/INS navigation computer on the floor carrying the operator's live display, flying over a small square of country with a road, a house, a shed and trees. A laser fires pulses that a galvanometer mirror swings from side to side; each echo's round-trip time gives a range, and the points build a cloud on the ground as the aircraft flies.";
+  "A cutaway section of a survey aircraft's fuselage, its top and near side cut away to show frames, windows and the cabin floor. On the floor a lidar head sits in a housing, itself cut open, on a stabilised mount bolted to the seat tracks, with a GNSS antenna on the fuselage above and a control rack of POS and sensor computers on the floor carrying the operator's live display, flying over a small square of country with a road, a house, a shed and trees. A laser fires pulses that a galvanometer mirror swings from side to side; each echo's round-trip time gives a range, and the points build a cloud on the ground as the aircraft flies.";
 const backSvg = k.figureSvg({ width: W, height: H, label: LABEL_TEXT, body: back, className: "ln-back" });
 // loupe A: the ring that Fig 2 magnifies, drawn round the housing like a lens held over the drawing
 const loupeA = (() => {
@@ -777,7 +777,7 @@ const fig1 =
       { mark: "raised", label: "Laser, receiver and timing board in a cut-open housing on a stabilised mount over the floor port" },
       { mark: "edge", label: "Points: each one is a pulse's echo, placed by its scan angle and range" },
     ],
-    caption: `A survey aircraft flies over a small square of country with the top and near side of its fuselage cut away. The lidar sensor head sits in a cut-open housing on a stabilised mount, the GNSS antenna is on the crown, and the navigation computer on the floor draws the live waveform on its monitor, the scope below. The drawing shows one pulse in ${LIDAR.pulseDecimation.toFixed(0)} and flies ${LIDAR.slow.toFixed(0)}× slower than the real aircraft.`,
+    caption: `A survey aircraft flies over a small square of country with the top and near side of its fuselage cut away. The lidar sensor head sits in a cut-open housing on a stabilised mount, the GNSS antenna is on the crown, and the sensor computer in the control rack on the floor draws the live waveform on its monitor, the scope below. The drawing shows one pulse in ${LIDAR.pulseDecimation.toFixed(0)} and flies ${LIDAR.slow.toFixed(0)}× slower than the real aircraft.`,
     body: stage + bigScope,
   });
 
