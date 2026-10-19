@@ -105,12 +105,9 @@ float scene(vec3 o,vec3 d,bool through,bool view,out vec3 n,out float kind){
 // a pulse packet along its path: t is the distance behind its leading centre; a short body and a faint motion trail
 float packet(float t){return exp(-t*t/(2.*1.1*1.1))+.32*exp(-max(t,0.)/14.)*smoothstep(0.,2.5,t);}
 float tri(float u){float f=mod(u,2.);return f<1.?-1.+2.*f:3.-2.*f;}
-vec3 ramp(float z){
-  float h=clamp(z/26.,0.,1.);
-  vec3 lo=uLight>.5?vec3(.02,.42,.46):vec3(.18,.85,.85);
-  vec3 mi=uLight>.5?vec3(.28,.52,.08):vec3(.55,.95,.35);
-  vec3 hi=uLight>.5?vec3(.78,.40,.02):vec3(1.,.72,.28);
-  return h<.45?mix(lo,mi,h/.45):mix(mi,hi,(h-.45)/.55);
+// every return is drawn in the laser's red; second returns a little dimmer
+vec3 hitInk(){
+  return uLight>.5?vec3(.84,.13,.16):vec3(1.,.28,.24);
 }
 float ampOf(float kind,bool first,bool canopyHit){
   float a=kind<.5?.62:kind<1.5?.3:kind<2.5?.5:kind<3.5?.42:.48;
@@ -160,7 +157,7 @@ void main(){
         float a=(1.-smoothstep(.55,1.25,ds))*vis*fade;
         float amp=ampOf(hk,r==0,false);
         float w=a*(.45+.9*amp)*glow;
-        if(w>aD){aD=w;cD=ramp(h.z)*(r==0?1.:.8);}
+        if(w>aD){aD=w;cD=hitInk()*(r==0?1.:.8);}
         if(r==1||hk<3.5)break;
         float k2;vec3 n2;
         ht=scene(po,pd,true,false,n2,k2);
