@@ -332,7 +332,7 @@ void main(){
 
   // ---------------------------------------------------------------- the map: top-down, aircraft flying up the page
   const MW = 400;
-  const MH = 400;
+  const MH = 448;
   const PX = 2;
   const PLANE = { x: MW / 2, y: 112 };
   const CAP = 24000;
@@ -824,7 +824,7 @@ void main(){
     c.fillText("20 m", 12 + 20 * PX + 6, 24);
     // what the IMU reads, and how far the newest points sit from where their pulses landed
     const sg = (v, d = 1) => `${v < 0 ? "−" : "+"}${Math.abs(v).toFixed(d).padStart(d + 3, "\u2007")}`;
-    const nav = `roll ${sg(att.roll / DEG)}°  pitch ${sg(att.pitch / DEG)}°  yaw ${sg(att.yaw / DEG)}°`;
+    const nav = cfg.nav === "ins" ? `roll ${sg(att.roll / DEG)}°  pitch ${sg(att.pitch / DEG)}°  yaw ${sg(att.yaw / DEG)}°` : "no IMU: roll, pitch and yaw unknown";
     let off = 0;
     let m = 0;
     if (cfg.scanner !== "flash")
@@ -868,7 +868,7 @@ void main(){
 
   // ---------------------------------------------------------------- the scope: the pulse train above, one pulse's echo below
   const SW = 400;
-  const SH = 230;
+  const SH = 182;
   const L0 = 44;
   const L1 = 388;
   let echoes = [];
@@ -935,7 +935,7 @@ void main(){
     const tof = ((2 * FLIGHT.alt) / C) * 1e6;
     const T1 = 3;
     const xT = (t) => L0 + (t / T1) * (L1 - L0);
-    const base = 78;
+    const base = 66;
     c.strokeStyle = lo;
     c.beginPath();
     c.moveTo(L0, base + 0.5), c.lineTo(L1, base + 0.5);
@@ -967,12 +967,12 @@ void main(){
       }
       if (t0 >= 0 && t0 <= T1) {
         c.fillStyle = ink;
-        c.fillRect(xT(t0) - 1, base - 34, 2, 34);
+        c.fillRect(xT(t0) - 1, base - 26, 2, 26);
         level++;
       }
       if (te >= 0 && te <= T1) {
         c.fillStyle = hi;
-        c.fillRect(xT(te) - 1, base - 6 - 26 * Math.min(1, firstEcho / 0.45), 2, 6 + 26 * Math.min(1, firstEcho / 0.45));
+        c.fillRect(xT(te) - 1, base - 6 - 18 * Math.min(1, firstEcho / 0.45), 2, 6 + 18 * Math.min(1, firstEcho / 0.45));
       }
     }
     c.fillStyle = muted;
@@ -980,8 +980,8 @@ void main(){
     c.fillText(`${facts.inAir} in the air · echo ${tof.toFixed(2)} µs`, L1, 12);
     c.textAlign = "left";
     // one pulse's echo, in range
-    const top = 132;
-    const floor = 196;
+    const top = 116;
+    const floor = 162;
     // one fixed gain per laser, so a bright roof stands taller than the road beside it
     const most = { yag: 0.55, fibre: 0.45, green: 0.2 }[cfg.laser] ?? 0.45;
     const yS = (v) => floor - clamp(v / most, -0.06, 1) * (floor - top);
@@ -1055,19 +1055,19 @@ void main(){
       const why = hitNow.kind === "none" ? "beam above the horizon" : LASERS[cfg.laser].water === "absorbed" ? "water absorbs 1550 nm" : "calm water mirrors the beam away";
       c.fillText(`no return · ${why}`, (L0 + L1) / 2, (top + floor) / 2);
     }
-    c.textAlign = "right";
+    c.textAlign = "left";
     c.fillStyle = muted;
     if (hitNow) {
+      // the hit and its returns share the top line with the pulse note, left of it, with the swatch its point wears
       const m = Math.min(4, peaks.length);
       const label = `${hitLabel(hitNow, echoes)}${hitNow.kind === "none" ? "" : ` · ${m} return${m === 1 ? "" : "s"}`}`;
-      c.fillText(label, L1, SH - 4);
-      // the same swatch the pulse's point wears on the map
+      const x = m ? 14 : 4;
+      c.fillText(label, x, 12);
       if (m) {
         c.fillStyle = `rgb(${RAMP[m - 1]})`;
-        c.fillRect(L1 - c.measureText(label).width - 10, SH - 10, 6, 6);
+        c.fillRect(4, 6, 6, 6);
       }
     }
-    c.textAlign = "left";
   }
   function hitLabel(h, ex) {
     if (h.kind === "tree") return `tree ${fmt(h.height)} m`;

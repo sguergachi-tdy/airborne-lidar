@@ -445,8 +445,9 @@ function bench() {
     box("label", [L.x, L.y, 0], [L.x + L.w, L.y + L.d, 0.6], { tone: "lo" }, { r: 1, extra: Ln([0, 1, 2].map((i) => k.lineOnTop([L.x + 4, L.y + 5 + i * 4], [L.x + L.w - 4 - (i === 2 ? 9 : 0), L.y + 5 + i * 4], 0.6, P)).join(""), { tone: "lo", free: true }) + screws(L, 0.6, 1.8, 0.4) });
   }
   // the IMU, bolted to the same bench as the scanner so the angle between them never changes; its axes are engraved
-  // on the lid, and its cable leaves through a bulkhead in the side wall to the GNSS/INS computer
-  {
+  // on the lid, and its cable leaves through a bulkhead in the side wall to the GNSS/INS computer; flown without an
+  // IMU, all of it comes out
+  when("nav:ins", CFG, () => {
     const M = { x: -90, y: -2, w: 36, d: 30, r: 0.8 };
     const pins = [at([-72, 0, 3]), at([-72, 26, 3])];
     box("imu.plate", [M.x, M.y, 0], [M.x + M.w, M.y + M.d, 3], { tone: "lo" }, { r: 0.8, bevel: 0.3, extra: screws(M, 3, 2.2, 0.45) + Dots(pins, { size: 0.6, tone: "mid" }) });
@@ -456,15 +457,15 @@ function bench() {
     box("imu.body", [B.x, B.y, 3], [B.x + B.w, B.y + B.d, zt], { tone: "mid" }, { r: 1.2, bevel: 0.5, inner: Ln(k.sideSeam(B, 22, P, 4), { tone: "faint" }), extra: screws(B, zt, 2.4, 0.5) + axes });
     const F = alongX(13, 16);
     turned("imu.socket", F, [[-89, 3.4], [-86, 3.4]], { tone: "lo" }, { bevel: 0.2 });
-  }
+  });
   // and the bulkhead it leaves by
-  {
+  when("nav:ins", CFG, () => {
     const F = G.frameOf([-136, 13, 16], [1, 0, 0], [0, 1, 0], [0, 0, 1]);
     turned("bulkimu.flange", F, [[0, 7], [2, 7]], { tone: "mid" }, { bevel: 0.3, extra: Dots(G.dotsOf(F, 2, 5.6, 4, P, { phase: Math.PI / 4, all: true }), { size: 0.45, tone: "lo" }) });
     turned("bulkimu.body", F, [[2, 4.6], [10, 4.6]], { tone: "lo" });
     turned("bulkimu.nut", F, [[10, 5.6], [15, 5.6]], { tone: "mid" }, { bevel: 0.3, extra: Ln(G.ribsOf(F, 10.4, 14.6, 5.6, 16, P, { seams: true }), { tone: "lo" }) });
     cable("cable.imu", [[-121, 13, 16], [-89, 13, 16]], 1, { shells: [false, true], ends: [false, false] });
-  }
+  });
 
   // the beam expander on its pedestal, and the injection mirror that turns the beam to the scanner
   box("expander.ped", [-28, -54, 0], [-16, -46, 42], { tone: "lo" }, { r: 0.4, bevel: 0.3, extra: Dots([at([-25, -46, 3]), at([-19, -46, 3])], { size: 0.45, tone: "mid" }) });
@@ -533,14 +534,17 @@ function bench() {
     box("rx.conn", [80, -104, 9.6], [88, -96, 13.6], { tone: "mid" }, { r: 0.4 });
     box("rx.jack", [38, -118, 9.6], [44, -112, 13], { tone: "mid" }, { r: 0.4 });
     cable("cable.data", [[84, -108, 70], [84, -100, 70], [84, -100, 13.6]], 1.1, { shells: [false, true], bend: 6, ends: [false, false] });
-    // the GNSS receiver's pulse-per-second: an SMA through its own small bulkhead, so every shot is stamped in GPS time
-    box("rx.pps", [37, -93, 9.6], [43, -87, 13], { tone: "mid" }, { r: 0.4 });
-    turned("rx.ppsbarrel", alongZ(40, -90), [[13, 1.7], [14.2, 1.7], [14.2, 1.4], [17, 1.4]], { tone: "mid" }, { bevel: 0.2 });
-    const F = G.frameOf([40, -126, 70], [0, 1, 0], [0, 0, 1], [1, 0, 0]);
-    turned("bulkpps.flange", F, [[0, 5], [1.6, 5]], { tone: "mid" }, { bevel: 0.3, extra: Dots(G.dotsOf(F, 1.6, 3.9, 4, P, { phase: Math.PI / 4, all: true }), { size: 0.4, tone: "lo" }) });
-    turned("bulkpps.body", F, [[1.6, 3], [10, 3]], { tone: "lo" });
-    turned("bulkpps.nut", F, [[10, 3.8], [14, 3.8]], { tone: "mid" }, { bevel: 0.2, extra: Ln(G.ribsOf(F, 10.3, 13.7, 3.8, 12, P, { seams: true }), { tone: "lo" }) });
-    cable("cable.pps", [[40, -112, 70], [40, -90, 70], [40, -90, 17]], 0.8, { shells: [false, true], bend: 5, ends: [false, false] });
+    // the GNSS receiver's pulse-per-second: an SMA through its own small bulkhead, so every shot is stamped in GPS time;
+    // flown without GNSS there is no GPS time to stamp, so it comes out
+    when("nav:ins|gnss", CFG, () => {
+      box("rx.pps", [37, -93, 9.6], [43, -87, 13], { tone: "mid" }, { r: 0.4 });
+      turned("rx.ppsbarrel", alongZ(40, -90), [[13, 1.7], [14.2, 1.7], [14.2, 1.4], [17, 1.4]], { tone: "mid" }, { bevel: 0.2 });
+      const F = G.frameOf([40, -126, 70], [0, 1, 0], [0, 0, 1], [1, 0, 0]);
+      turned("bulkpps.flange", F, [[0, 5], [1.6, 5]], { tone: "mid" }, { bevel: 0.3, extra: Dots(G.dotsOf(F, 1.6, 3.9, 4, P, { phase: Math.PI / 4, all: true }), { size: 0.4, tone: "lo" }) });
+      turned("bulkpps.body", F, [[1.6, 3], [10, 3]], { tone: "lo" });
+      turned("bulkpps.nut", F, [[10, 3.8], [14, 3.8]], { tone: "mid" }, { bevel: 0.2, extra: Ln(G.ribsOf(F, 10.3, 13.7, 3.8, 12, P, { seams: true }), { tone: "lo" }) });
+      cable("cable.pps", [[40, -112, 70], [40, -90, 70], [40, -90, 17]], 0.8, { shells: [false, true], bend: 5, ends: [false, false] });
+    });
   }
   // the power supply: finned case, fed from the other bulkhead, feeding the scanner drive
   {
@@ -790,7 +794,7 @@ const tagOf = (cfg) => `${cfg.scanner}${cfg.scanner === "polygon" ? cfg.facets :
 export function define(cfg) {
   R = A.recorder(P);
   WHEN = "";
-  CFG = { rx: "inject", ...cfg };
+  CFG = { rx: "inject", nav: "ins", ...cfg };
   SECTION = [];
   bench();
   lasers(cfg);
@@ -1007,7 +1011,7 @@ export function buildHead() {
   const bezel = `<svg xmlns="http://www.w3.org/2000/svg" class="iso-svg hd-layer hd-bezel" viewBox="0 0 ${HW} ${HH}" aria-hidden="true"><circle class="hd-rim" cx="${cx}" cy="${cy}" r="${r + 6.5}"/><path class="hd-knurl" d="${ticks}"/><circle class="hd-rim-in" cx="${cx}" cy="${cy}" r="${r}"/><path class="hd-glint" d="${glint}"/><text class="hd-mag" x="${cx}" y="${(cy + r + 24).toFixed(1)}" text-anchor="middle" data-part="mag">A</text></svg>`;
   const stage = `<div class="iso-stage hd-stage" tabindex="0" role="group" aria-label="The lidar head, magnified. Choose a scanner, laser, pulse rate, receiver and navigation with the settings below; the scope shows what the last pulse hit on the map; click or press Space to pause."><span class="hd-said" aria-live="polite"></span>${backSvg}<canvas class="hd-layer hd-gl" aria-hidden="true"></canvas>${frontSvg}${bezel}<div class="hd-paused" aria-hidden="true"><b>Simulation paused</b><span>click or Space to resume</span></div></div>`;
   const controls = controlsHtml();
-  const side = `<div class="hd-side"><div class="hd-panel"><div class="hd-panel-head"><span>Scan pattern, top-down</span><span data-part="map-note"></span></div><canvas class="hd-map" width="400" height="400" aria-label="Top-down view: the aircraft and the pattern its scanner draws on the ground"></canvas></div><div class="hd-panel"><div class="hd-panel-head"><span>Receiver</span><span data-part="scope-note"></span></div><canvas class="hd-scope" width="400" height="230" aria-label="The detector's signal for one pulse"></canvas></div></div>`;
+  const side = `<div class="hd-side"><div class="hd-panel"><div class="hd-panel-head"><span>Scan pattern, top-down</span><span data-part="map-note"></span></div><canvas class="hd-map" width="400" height="448" aria-label="Top-down view: the aircraft and the pattern its scanner draws on the ground"></canvas></div><div class="hd-panel"><div class="hd-panel-head"><span>Receiver</span><span data-part="scope-note"></span></div><canvas class="hd-scope" width="400" height="182" aria-label="The detector's signal for one pulse"></canvas></div></div>`;
   const DATA = {
     W: HW,
     H: HH,
