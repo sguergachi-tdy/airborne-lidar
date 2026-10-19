@@ -108,3 +108,44 @@
     });
   }
 })();
+
+// The masthead's theme switch: Auto follows the system, Light and Dark override it. The choice is saved, and the page
+// reloads into it (keeping its place) because the figures pick their inks once at start.
+(() => {
+  const group = document.querySelector(".gd-theme");
+  const b = document.body;
+  if (!group || !b.dataset.themePref) return;
+  const K = "lidar-theme";
+  const Y = "lidar-theme-y";
+  const sys = matchMedia("(prefers-color-scheme: light)");
+  const mark = (p) => {
+    for (const btn of group.querySelectorAll("button")) btn.setAttribute("aria-pressed", String(btn.dataset.themePick === p));
+  };
+  mark(b.dataset.themePref);
+  group.hidden = false;
+  const y = sessionStorage.getItem(Y);
+  if (y !== null) {
+    sessionStorage.removeItem(Y);
+    const go = () => scrollTo({ top: +y, behavior: "instant" });
+    if (document.readyState === "complete") go();
+    else addEventListener("load", go, { once: true });
+  }
+  group.addEventListener("click", (e) => {
+    const p = e.target.closest("button[data-theme-pick]")?.dataset.themePick;
+    if (!p || p === b.dataset.themePref) return;
+    try {
+      if (p === "auto") localStorage.removeItem(K);
+      else localStorage.setItem(K, p);
+    } catch {}
+    b.dataset.themePref = p;
+    mark(p);
+    const url = new URL(location.href);
+    const forced = url.searchParams.has("theme");
+    url.searchParams.delete("theme");
+    const want = p === "auto" ? (sys.matches ? "light" : "dark") : p;
+    if (want === b.dataset.theme && !forced) return;
+    sessionStorage.setItem(Y, String(scrollY));
+    if (forced) location.replace(url);
+    else location.reload();
+  });
+})();

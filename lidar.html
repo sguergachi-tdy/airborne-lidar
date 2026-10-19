@@ -111,7 +111,7 @@ html{color-scheme:dark}
 body[data-theme="light"]{color-scheme:light}
 body{margin:0;background:var(--anatomy-page);color:var(--anatomy-text);font:14px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
 .iso-page{width:min(1120px,100% - 32px);margin:64px auto 96px}
-</style></head><body class="iso" data-theme="dark"><main class="iso-page"><script>(()=>{const q=new URLSearchParams(location.search).get("theme"),m=matchMedia("(prefers-color-scheme: light)");document.body.dataset.theme=q==="light"||q==="dark"?q:m.matches?"light":"dark";if(!q)m.addEventListener("change",()=>location.reload())})()</script><style>.ln .iso-plate {
+</style></head><body class="iso" data-theme="dark"><main class="iso-page"><script>(()=>{const K="lidar-theme",q=new URLSearchParams(location.search).get("theme"),m=matchMedia("(prefers-color-scheme: light)"),pref=()=>{try{const s=localStorage.getItem(K);return s==="light"||s==="dark"?s:"auto"}catch{return"auto"}},p=pref(),b=document.body;b.dataset.themePref=p;b.dataset.theme=q==="light"||q==="dark"?q:p!=="auto"?p:m.matches?"light":"dark";if(!q)m.addEventListener("change",()=>{if(pref()==="auto")location.reload()})})()</script><style>.ln .iso-plate {
   overflow: hidden;
 }
 
@@ -1490,12 +1490,60 @@ html {
   padding: 24px 0 8px;
 }
 
+.gd-mast-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
 .gd-kicker {
   font: 500 12px/1 var(--gd-mono);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--gd-accent);
-  margin-bottom: 28px !important;
+  margin: 0 !important;
+}
+
+/* the reader's manual override of the system theme */
+.gd-theme {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--gd-rule);
+  border-radius: 6px;
+}
+
+.gd-theme[hidden] {
+  display: none;
+}
+
+.gd-theme button {
+  appearance: none;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--gd-soft);
+  font: 11px/1 var(--gd-mono);
+  letter-spacing: 0.04em;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.gd-theme button:hover {
+  color: var(--gd-head);
+}
+
+.gd-theme button:focus-visible {
+  outline: 1px solid var(--gd-accent);
+  outline-offset: 1px;
+}
+
+.gd-theme button[aria-pressed="true"] {
+  background: var(--gd-panel);
+  color: var(--gd-head);
+  box-shadow: inset 0 0 0 1px var(--gd-rule);
 }
 
 .gd h1 {
@@ -2176,7 +2224,7 @@ html {
 </style>
 <article class="gd">
   <header class="gd-mast gd-col">
-    <p class="gd-kicker">A field guide</p>
+    <div class="gd-mast-top"><p class="gd-kicker">A field guide</p><div class="gd-theme" role="group" aria-label="Colour theme" hidden><button type="button" data-theme-pick="auto" aria-pressed="false">Auto</button><button type="button" data-theme-pick="light" aria-pressed="false">Light</button><button type="button" data-theme-pick="dark" aria-pressed="false">Dark</button></div></div>
     <h1>How airborne lidar works</h1>
     <p class="gd-dek">An airborne <a class="gd-wiki" href="https://en.wikipedia.org/wiki/Lidar" target="_blank" rel="noopener" title="Wikipedia: Lidar">lidar</a> fires 250 thousand laser pulses a second at the ground and times each echo to a fraction of a nanosecond. Add the aircraft's position and attitude, and every echo becomes a point on the map.</p>
     <p class="gd-meta"><span>About 15 minutes</span><span>All three figures are live: move, hover and click</span><span>Every number comes from one model</span><span>Underlined terms open Wikipedia</span></p>
@@ -9416,5 +9464,46 @@ return { FIGS, ANIMS, lidarWith };})();
       show(prf, pw());
     });
   }
+})();
+
+// The masthead's theme switch: Auto follows the system, Light and Dark override it. The choice is saved, and the page
+// reloads into it (keeping its place) because the figures pick their inks once at start.
+(() => {
+  const group = document.querySelector(".gd-theme");
+  const b = document.body;
+  if (!group || !b.dataset.themePref) return;
+  const K = "lidar-theme";
+  const Y = "lidar-theme-y";
+  const sys = matchMedia("(prefers-color-scheme: light)");
+  const mark = (p) => {
+    for (const btn of group.querySelectorAll("button")) btn.setAttribute("aria-pressed", String(btn.dataset.themePick === p));
+  };
+  mark(b.dataset.themePref);
+  group.hidden = false;
+  const y = sessionStorage.getItem(Y);
+  if (y !== null) {
+    sessionStorage.removeItem(Y);
+    const go = () => scrollTo({ top: +y, behavior: "instant" });
+    if (document.readyState === "complete") go();
+    else addEventListener("load", go, { once: true });
+  }
+  group.addEventListener("click", (e) => {
+    const p = e.target.closest("button[data-theme-pick]")?.dataset.themePick;
+    if (!p || p === b.dataset.themePref) return;
+    try {
+      if (p === "auto") localStorage.removeItem(K);
+      else localStorage.setItem(K, p);
+    } catch {}
+    b.dataset.themePref = p;
+    mark(p);
+    const url = new URL(location.href);
+    const forced = url.searchParams.has("theme");
+    url.searchParams.delete("theme");
+    const want = p === "auto" ? (sys.matches ? "light" : "dark") : p;
+    if (want === b.dataset.theme && !forced) return;
+    sessionStorage.setItem(Y, String(scrollY));
+    if (forced) location.replace(url);
+    else location.reload();
+  });
 })();
 </script></body></html>

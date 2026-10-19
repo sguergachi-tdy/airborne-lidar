@@ -16,8 +16,8 @@ The pages are standalone HTML files; `lidar.html` and `lidar-light.html` are com
 To rebuild them you need Node 20+ and the anatomy skill's kit. The build looks for it in `~/.agents/skills/anatomy`, or wherever `ANATOMY_SKILL` points.
 
 ```sh
-node build.mjs          # writes lidar.html (dark, follows the system theme)
-node build.mjs --light  # writes lidar-light.html
+node build.mjs          # writes lidar.html (follows the system theme; Auto/Light/Dark switch in the masthead)
+node build.mjs --light  # writes lidar-light.html (always light, no switch)
 ```
 
 Made with Claude Code and Claude Opus 5.5.

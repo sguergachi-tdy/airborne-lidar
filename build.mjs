@@ -817,9 +817,10 @@ const fig3 = k.plateHtml({
 
 const GUIDE_CSS = readFileSync(join(HERE, "guide.css"), "utf8");
 const body = `<style>${CSS}${GUIDE_CSS}</style>` + guideHtml({ LIDAR, HM: HMOD, HF, CAL: CALMOD.CAL, fig1, fig2, fig3, scans: scannerThumbs() });
-// the dark page follows the reader's system theme (or ?theme=light|dark); it runs before any figure script reads
-// data-theme, and reloads on a system change because the shaders and canvases pick their inks once at start
-const AUTO_THEME = `<script>(()=>{const q=new URLSearchParams(location.search).get("theme"),m=matchMedia("(prefers-color-scheme: light)");document.body.dataset.theme=q==="light"||q==="dark"?q:m.matches?"light":"dark";if(!q)m.addEventListener("change",()=>location.reload())})()</script>`;
+// the dark page follows ?theme=light|dark, then the reader's saved choice (the masthead switch), then the system theme;
+// it runs before any figure script reads data-theme, and reloads on a system change while on Auto because the shaders
+// and canvases pick their inks once at start
+const AUTO_THEME = `<script>(()=>{const K="lidar-theme",q=new URLSearchParams(location.search).get("theme"),m=matchMedia("(prefers-color-scheme: light)"),pref=()=>{try{const s=localStorage.getItem(K);return s==="light"||s==="dark"?s:"auto"}catch{return"auto"}},p=pref(),b=document.body;b.dataset.themePref=p;b.dataset.theme=q==="light"||q==="dark"?q:p!=="auto"?p:m.matches?"light":"dark";if(!q)m.addEventListener("change",()=>{if(pref()==="auto")location.reload()})})()</script>`;
 const page = k.pageHtml({ title: "How airborne lidar works: a field guide", theme: THEME, body: (THEME === "dark" ? AUTO_THEME : "") + body, script: kitScript() + glScript() + latheScript + modelScript + partsScript + LIVE + headScript + HEAD_LIVE + calScript + CAL_LIVE + guideScript, width: 1120 });
 if (!page.includes(`data-theme="dark"><main class="iso-page">${AUTO_THEME}`) && THEME === "dark") throw new Error("theme script must open <main>");
 const name = THEME === "light" ? "lidar-light.html" : "lidar.html";
