@@ -157,7 +157,7 @@ export function guideHtml({ LIDAR, HM, HF, CAL, fig1, fig2, fig3, scans }) {
     <div class="gd-mast-top"><p class="gd-kicker">A field guide</p><div class="gd-theme" role="group" aria-label="Colour theme" hidden>${["auto", "light", "dark"].map((t) => `<button type="button" data-theme-pick="${t}" aria-pressed="false">${t[0].toUpperCase() + t.slice(1)}</button>`).join("")}</div></div>
     <h1>How airborne lidar works</h1>
     <p class="gd-dek">An airborne lidar maps the ground from an aircraft with a laser. It fires short pulses of light downwards, hundreds of thousands a second, and times how long each takes to bounce back, which gives the distance. Add where the aircraft is and which way it points, and every echo becomes a point on the map.</p>
-    <p class="gd-meta"><span>About 15 minutes</span><span>All three figures are live: move, hover and click</span><span>Every number comes from one model</span><span>Underlined terms open Wikipedia</span></p>
+    <p class="gd-meta"><span>About 15 minutes</span></p>
     <nav class="gd-toc" aria-label="Contents">
       <span class="gd-label">Contents</span>
       <ol>${chapters.map(([id, title], i) => `<li><a href="#${id}"><span class="gd-toc-n">${String(i + 1).padStart(2, "0")}</span><span>${title}</span></a></li>`).join("")}<li><a href="#glossary"><span class="gd-toc-n">+</span><span>Glossary</span></a></li></ol>
