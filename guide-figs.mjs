@@ -455,6 +455,137 @@ export function walkoffFig(L, a = {}) {
   return svg(560, 240, `Left, a small injection mirror puts the laser pulse onto a galvo mirror, which sends it ${Math.round(R)} m down; by the time its echo returns the mirror has turned on, so the receiver's field of view, which looks out through the same mirror, has moved ${n(mr)} milliradians past the lit spot, and the receiving telescope focuses the echo beside its pinhole. Right, the echo's image on a 1 mrad field stop, offset by that walk-off.`, out);
 }
 
+// ---------------------------------------------------------------- 8 · time sync: a shot's sensor time to GPS time to the trajectory
+// animated, a.s is the shot's GPS time in seconds after T1; without it the shot sits 0.382 364 s after the PPS. The time
+// axis is true: 305 px a second, so the IMU's 200 samples a second sit 1.5 px apart and the shots are a continuous band.
+// The sensor clock is offset from GPS time by an arbitrary 0.83 s and runs 37 ppm fast, a typical crystal.
+const T1 = 345601;
+const MARKS = [4183.830412, 4184.830449];
+const syncRoll = (t) => 2.2 * Math.sin((2 * Math.PI * t) / 2.7 + 0.9) + 1.1 * Math.sin((2 * Math.PI * t) / 0.9 + 2.1) + 0.4 * Math.sin((2 * Math.PI * t) / 0.37 + 0.4);
+// Animated, a.z zooms the whole chart in about the shot: 0 is the 1.48 s overview, 1 is 12 ms (the IMU's samples, 5 ms
+// apart, and the straight trajectory between them) and 2 is 25 µs (single shots at the PRF). The roll scale zooms with it.
+const SYNC_W = [1.48, 0.012, 25e-6];
+const SYNC_STEPS = [1e-6, 5e-6, 1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 0.01, 0.05, 0.1, 0.5, 1];
+export function syncFig(L, a = {}) {
+  const out = [];
+  const s = a.s ?? 0.382364;
+  const z = Math.max(0, Math.min(2, a.z ?? 0));
+  const X0 = 96;
+  const X1 = X0 + SYNC_W[0] * 305;
+  const lw = SYNC_W.map(Math.log);
+  const W = Math.exp(z <= 1 ? lw[0] + (lw[1] - lw[0]) * z : lw[1] + (lw[2] - lw[1]) * (z - 1));
+  const f0 = (s + 0.18) / SYNC_W[0];
+  const t0 = s - (f0 + (0.5 - f0) * Math.min(1, z)) * W;
+  const t1 = t0 + W;
+  const k = (X1 - X0) / W;
+  const X = (t) => X0 + (t - t0) * k;
+  const inX = (x, m = 0) => x >= X0 + m && x <= X1 - m;
+  const per = MARKS[1] - MARKS[0];
+  const sensor = (t) => MARKS[0] + t * per;
+  const label = (y, s) => text([8, y], s, "lb", "start");
+  const op = (o, body) => (o <= 0 ? "" : o >= 1 ? body : `<g opacity="${n(o, 2)}">${body}</g>`);
+  const ms = (v) => String(Math.round((v - Math.floor(v)) * 1e3) % 1000).padStart(3, "0");
+  const us = (v) => String(Math.round((v - Math.floor(v)) * 1e6) % 1e6).padStart(6, "0").replace(/^(\d{3})/, "$1 ");
+  const secs = (v) => String(Math.round(v)).replace(/^(\d+)(\d{3})$/, "$1 $2");
+  // a ruler that re-ticks itself as it zooms: each level of ticks fades in as it spreads, and is labelled once it has room
+  const ruler = (y, v0, v1, xOf, name) => {
+    const pxPer = (xOf(v1) - xOf(v0)) / (v1 - v0);
+    out.push(line([[X0, y], [X1, y]], "s"));
+    SYNC_STEPS.forEach((st, i) => {
+      const sp = st * pxPer;
+      if (sp < 16) return;
+      const up = SYNC_STEPS[i + 1];
+      const h = 4 + 3 * ease((sp - 155) / 25);
+      const d = [];
+      const labs = [];
+      for (let j = Math.ceil(v0 / st - 1e-9); j <= Math.floor(v1 / st + 1e-9); j++) {
+        const v = j * st;
+        if (up && Math.abs(v / up - Math.round(v / up)) < 1e-6) continue;
+        const x = xOf(v);
+        d.push(`M${n(x)} ${y}L${n(x)} ${n(y + h)}`);
+        if (sp > 155 && inX(x, 30)) labs.push(text([x, y + 21], st >= 1 ? `${name(v)} s` : st >= 1e-3 ? `${ms(v)} ms` : `${us(v)} µs`, "lb halo"));
+      }
+      out.push(op(ease((sp - 16) / 14), `<path class="ln t-s" d="${d.join("")}"/>`), op(ease((sp - 155) / 25), labs.join("")));
+    });
+  };
+  // the trajectory: roll, blended from the IMU and GNSS below it, a straight line between the IMU's samples
+  const lin = (t) => {
+    const i = Math.floor(t * 200);
+    return syncRoll(i / 200) + (syncRoll((i + 1) / 200) - syncRoll(i / 200)) * (t * 200 - i);
+  };
+  const roll = lin(s);
+  const kr = 7 * (240 / 7) ** Math.min(1, z);
+  const Yr = (r) => 58 - 7 * roll - (r - roll) * kr;
+  const ks = [];
+  for (let i = Math.floor(t0 * 200) + 1; i / 200 < t1; i++) ks.push(i);
+  const curve = [[X0, Yr(lin(t0))], ...ks.map((i) => [X(i / 200), Yr(syncRoll(i / 200))]), [X1, Yr(lin(t1))]];
+  out.push(`<clipPath id="gd-sync-roll"><rect x="${X0}" y="10" width="${n(X1 - X0)}" height="82"/></clipPath>`);
+  out.push(`<g clip-path="url(#gd-sync-roll)">${dash([[X0, Yr(0)], [X1, Yr(0)]], "f")}${line(curve, "h")}</g>`, label(62, "roll"));
+  // the IMU, 200 samples a second; spread out, each sample shows where it sits on the trajectory
+  const imu = ks.map((i) => `M${n(X(i / 200))} 100L${n(X(i / 200))} 95`);
+  out.push(`<path class="ln t-f" d="${imu.join("")}"/>`, line([[X0, 100], [X1, 100]], "s"), label(104, "IMU"));
+  const ksp = k / 200;
+  const i0 = Math.floor(s * 200);
+  const pts = [];
+  for (const i of ks) {
+    const p = [X(i / 200), Yr(syncRoll(i / 200))];
+    if (p[1] < 14 || p[1] > 88) continue;
+    pts.push(dot([p[0], 100], 2, "s"), dash([[p[0], 95], [p[0], p[1] + 4]], "f"), i === i0 || i === i0 + 1 ? ring(p, 3.2, "h") : dot(p, 2.6, "h"));
+  }
+  const seg = line([[X(i0 / 200), Yr(syncRoll(i0 / 200))], [X((i0 + 1) / 200), Yr(syncRoll((i0 + 1) / 200))]], "a");
+  out.push(op(ease((ksp - 12) / 30), `<g clip-path="url(#gd-sync-roll)">${seg}</g>${pts.join("")}`));
+  // GNSS fixes 5 a second, on the GPS second
+  out.push(line([[X0, 122], [X1, 122]], "s"), label(126, "GNSS"));
+  for (let i = Math.ceil(t0 * 5); i <= t1 * 5; i++) if (inX(X(i / 5))) out.push(dot([X(i / 5), 122], 2.4, "h"));
+  // GPS time, and the receiver's PPS: a pulse on the edge of every second, then a message naming it
+  ruler(148, t0, t1, X, (v) => secs(T1 + v));
+  out.push(label(152, "GPS time"));
+  const py = 200;
+  const pulse = [[X0, py]];
+  const edges = [Math.ceil(t0), Math.ceil(t0) + 1].filter((t) => inX(X(t)) && X(t) + 3 <= X1);
+  for (const t of edges) pulse.push([X(t), py], [X(t), py - 16], [X(t) + 3, py - 16], [X(t) + 3, py]);
+  pulse.push([X1, py]);
+  out.push(line(pulse, "h"), label(204, "PPS"));
+  for (const t of edges) {
+    const bx = X(t) + 12;
+    if (bx + 74 <= X1) out.push(`<rect class="fl-paper ln t-s" x="${n(bx)}" y="${py - 18}" width="74" height="18" rx="2"/>`, text([bx + 37, py - 4.5], secs(T1 + t), "lb"));
+  }
+  // the shots: a continuous band until they spread apart, then one mark per pulse
+  const sy = 250;
+  const psp = k / L.prf;
+  const solo = ease((psp - 3) / 9);
+  out.push(op(1 - solo, `<rect class="wash" x="${X0}" y="${sy - 34}" width="${n(X1 - X0)}" height="10"/>`), label(225, "shots"));
+  if (solo > 0) {
+    const hw = Math.min(3.2, psp * 0.3);
+    const tri = [];
+    for (let j = Math.ceil((t0 - s) * L.prf); j <= (t1 - s) * L.prf; j++) {
+      const x = X(s + j / L.prf);
+      if (j && inX(x, hw)) tri.push(shape([[x - hw, sy - 24], [x, sy - 36], [x + hw, sy - 24]], "fl t-s"));
+    }
+    out.push(op(solo, tri.join("")));
+  }
+  // the sensor clock, offset and running fast: it logs each PPS edge as a mark
+  ruler(sy, sensor(t0), sensor(t1), (c) => X((c - MARKS[0]) / per), secs);
+  out.push(label(254, "sensor"));
+  for (const t of [0, 1]) if (inX(X(t))) out.push(dash([[X(t), py + 2], [X(t), sy - 2]], "s"), ring([X(t), sy], 3, "h"));
+  // the shot: its sensor time between the two marks gives its GPS time, and that picks the trajectory
+  const xs = X(s);
+  const top = [xs, Yr(roll)];
+  out.push(line([[xs, sy], top], "a"), line([[xs, sy - 36], [xs, sy - 22]], "a", " trace"));
+  out.push(op(solo, shape([[xs - 3.2, sy - 24], [xs, sy - 36], [xs + 3.2, sy - 24]], "fl t-a")));
+  out.push(dot([xs, sy], 2.4, "a"), dot([xs, 148], 2.4, "a"), dot(top, 3.2, "a"));
+  // the window's width, across the top
+  const wide = W >= 1 ? `${W.toFixed(2)} s` : W >= 1e-3 ? `${(W * 1e3).toFixed(W >= 0.1 ? 0 : 1)} ms` : `${(W * 1e6).toFixed(W >= 1e-4 ? 0 : 1)} µs`;
+  out.unshift('<g transform="translate(0 10)">');
+  out.push("</g>", dim([X0, 18], [X1, 18], "s"), text([(X0 + X1) / 2, 11], wide, "lb hd"));
+  const c = sensor(s);
+  const fmt = (x, d) => x.toFixed(d).replace(/^(\d+)(\d{3})\./, "$1 $2.").replace(/(\.\d{3})(\d+)/, "$1 $2");
+  out.push(text([8, 314], `${v("c")} = ${fmt(c, 6)} s`, "lb hd", "start"));
+  out.push(text([316, 314], `${v("t")}${sub("GPS")} = ${fmt(T1 + s, 6)} s`, "lb hd", "middle"));
+  out.push(text([X1, 314], `roll ${roll < 0 ? "−" : "+"}${pad(Math.abs(roll).toFixed(3), 5)}°`, "lb hd", "end"));
+  return svg(560, 326, `A timing diagram on one true time axis, ${wide} wide. At the top, the aircraft's roll from the trajectory, blended from IMU samples 200 times a second and GNSS fixes 5 times a second. Below, GPS time and the receiver's PPS, a pulse on the edge of each second followed by a message naming it. At the bottom, the sensor clock, offset and running slightly fast, logs each PPS edge as a mark beside its stream of shots. One shot logged at ${fmt(c, 6)} s on the sensor clock falls ${n(s)} of the way between the marks, so its GPS time is ${fmt(T1 + s, 6)} s, where the trajectory, a straight line between the IMU samples on either side, has the aircraft rolled ${roll.toFixed(3)} degrees. The chart zooms in on the shot to 12 milliseconds, where the IMU samples 5 ms apart appear, and to 25 microseconds, where single shots ${n(1e6 / L.prf)} microseconds apart appear.`, out);
+}
+
 // ---------------------------------------------------------------- the drawings' animations
 // Each one plays once when it scrolls into view: at(t) gives the parameters to change and the drawing's own state at
 // time t (s), and every animation ends exactly on the drawing at rest, so the page reads the same when it stops.
@@ -553,8 +684,19 @@ export const ANIMS = {
     dur: 10,
     at: (t) => ({ a: { u: t / 2.5, R: Math.round(kf(t, [[1.2, 1000], [2.8, 2000], [4.4, 2000], [6.2, 300], [7.6, 300], [9.2, 1000]])) } }),
   },
+  // the chart zooms in on the shot to 12 ms and 25 µs and back out; then the shot slides along the sensor clock to the
+  // next second, back past the first and home, and GPS time and roll follow
+  sync: {
+    dur: 19.6,
+    at: (t) => ({
+      a: {
+        z: kf(t, [[0.6, 0], [2.8, 1], [4.8, 1], [7, 2], [9, 2], [10.6, 0]]),
+        s: kf(t, [[11, 0.382364], [13, 1.02], [13.8, 1.02], [16.2, -0.1], [17, -0.1], [19, 0.382364]]),
+      },
+    }),
+  },
 };
-export const FIGS = { ranging: rangingFig, maxRange: maxRangeFig, swath: swathFig, spacing: spacingFig, density: densityFig, georef: georefFig, walkoff: walkoffFig };
+export const FIGS = { ranging: rangingFig, maxRange: maxRangeFig, swath: swathFig, spacing: spacingFig, density: densityFig, georef: georefFig, walkoff: walkoffFig, sync: syncFig };
 
 // ---------------------------------------------------------------- wavelength: what each laser sees
 // Typical reflectance of a green leaf, dry bare soil and fresh fine-grained snow (after the USGS and ASTER spectral

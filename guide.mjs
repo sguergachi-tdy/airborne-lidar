@@ -1,6 +1,6 @@
 // The field guide that wraps the three figures: chapters, equations, tables and a glossary, every number taken from the
 // same models that drive the drawings.
-import { rangingFig, maxRangeFig, swathFig, spacingFig, densityFig, georefFig, walkoffFig, wavelengthFig, patternFig, echoFig } from "./guide-figs.mjs";
+import { rangingFig, maxRangeFig, swathFig, spacingFig, densityFig, georefFig, walkoffFig, syncFig, wavelengthFig, patternFig, echoFig } from "./guide-figs.mjs";
 import { LASERS } from "./head-model.mjs";
 
 const C = 299792458;
@@ -211,6 +211,7 @@ export function guideHtml({ LIDAR, HM, HF, CAL, fig1, fig2, fig3, scans }) {
       <li><b>Sensor computer</b>, also in the head. It runs the laser and scanner and logs every range and scan angle with its time to an internal drive. One harness to the cabin brings in power from a small power distribution unit (PDU) and carries its live view to the operator console.</li>
     </ul>
     <p>The INS and the sensor computer keep separate clocks. The INS's GNSS receiver puts out a <em>PPS</em>, a pulse on the edge of every GPS second, followed by a message that names the second. The sensor logs when each of those pulses arrives on its own clock, alongside its shots. Afterwards, on the sensor computer, those marks convert every shot's time to GPS time, the trajectory's clock, so each range can be matched to the position and attitude at its instant.</p>
+    ${eq(`<i>t</i><sub>GPS</sub> = <i>T</i><sub>k</sub> + (<i>c</i> − <i>c</i><sub>k</sub>) / (<i>c</i><sub>k+1</sub> − <i>c</i><sub>k</sub>) · 1 s`, `<i>c</i> is a shot's time on the sensor clock and <i>c</i><sub>k</sub> the mark it logged for the PPS at GPS second <i>T</i><sub>k</sub>. A millisecond off would move every point ${f(LIDAR.speed * 0.1, 1)} cm along the track`, syncFig(LIDAR), "sync")}
     <p>The trajectory that places the points is also computed after the flight. A GNSS base station on a surveyed point, the tripod at the edge of Figure 1, logs the same satellites all through the flight. Differencing the two receivers removes most of the satellite orbit and atmosphere errors, and the Kalman filter is run forwards and backwards over the whole flight, for a trajectory good to a few centimetres.</p>
     <p>Two calibrations, measured once, tie the sensor to the trajectory. The <em>lever arm</em> is the offset from the antenna to the IMU and on to the scanner, and the <em>boresight</em> is the small set of angles between the IMU and the scanner. The lever arm is measured with a tape or a total station; the boresight is too small to measure that way, and chapter 11 finds it from the data.</p>
     <p>The housing also rides on a stabilised mount. It takes out most of the aircraft's roll and pitch, and turns the head against drift (the yaw of flying crabbed into a crosswind) so the scan line stays square to the track. The IMU on the head measures whatever motion is left, and the mount logs its own angles, because tilting the head under the antenna changes the lever arm.</p>
