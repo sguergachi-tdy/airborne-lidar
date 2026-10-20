@@ -393,7 +393,7 @@ export function walkoffFig(L, a = {}) {
   const mr = delta * 1e3;
   // left: the beam when the pulse left, and where the receiver looks when its echo comes back; angles drawn 12°/mrad
   const K = 12;
-  const M = [128, 50];
+  const M = [160, 50];
   const gy = 196;
   const h = gy - M[1];
   const gx = (deg) => [M[0] - h * Math.tan(rad(deg)), gy];
@@ -403,7 +403,28 @@ export function walkoffFig(L, a = {}) {
   out.push(shape([M, gx(now - half), gx(now + half)], "wash"));
   out.push(ground(16, 330, gy));
   out.push(line([M, gx(now - half)], "f"), line([M, gx(now + half)], "f"), dash([M, gx(now)], "h"));
-  out.push(arrow([16, M[1]], [M[0] - 3, M[1]], "a"), text([18, M[1] - 9], "laser", "lb", "start"));
+  // the receiver shares the scanner: the echo bundle comes back off the galvo, past the small injection mirror that
+  // put the pulse in, and the objective focuses it on the field stop, off the pinhole by the walk-off (12 px per mrad)
+  const pass = inside((FOV / 2) * 1e3, (L.divergence / 2) * 1e3, Math.abs(mr));
+  const at = (dy) => [M[0] + dy / Math.tan(rad(45 + now / 2)), M[1] + dy];
+  const J = [114, M[1]];
+  const lens = 84;
+  const w = 11;
+  const F = [54, M[1] + Math.max(-18, Math.min(18, mr * 12))];
+  const relay = 36;
+  const r = (w * (F[0] - relay)) / (lens - F[0]);
+  out.push(shape([[lens, M[1] - w], at(-w), at(w), [lens, M[1] + w]], "wash"));
+  out.push(line([[lens, M[1] - w], at(-w)], "s"), line([[lens, M[1] + w], at(w)], "s"));
+  out.push(line([J, [M[0] - 3, M[1]]], "a"), arrow([J[0], 6], [J[0], M[1] - 3], "a"), text([J[0] + 7, 16], "laser", "lb", "start"));
+  out.push(`<path class="ln t-h mirror" d="${dOf([[J[0] - 5, M[1] - 5], [J[0] + 5, M[1] + 5]])}"/>`);
+  out.push(line([[lens, M[1] - w], F], "s"), line([[lens, M[1] + w], F], "s"));
+  const lensAt = (x, hh) => `<path class="fl-paper ln t-h" d="M${x} ${M[1] - hh}Q${x + hh / 2} ${M[1]} ${x} ${M[1] + hh}Q${x - hh / 2} ${M[1]} ${x} ${M[1] - hh}Z"/>`;
+  out.push(`<g opacity="${n(pass)}">${line([F, [relay, M[1] - r]], "s")}${line([F, [relay, M[1] + r]], "s")}${line([[relay, M[1] - r], [14, M[1] - r]], "s")}${line([[relay, M[1] + r], [14, M[1] + r]], "s")}</g>`);
+  out.push(lensAt(lens, 15), lensAt(relay, 10));
+  out.push(`<rect class="fl-paper ln t-s" x="22" y="${M[1] - 10}" width="3" height="20"/>`);
+  out.push(line([[F[0], M[1] - 22], [F[0], M[1] - 6]], "h", " trace"), line([[F[0], M[1] + 6], [F[0], M[1] + 22]], "h", " trace"));
+  out.push(`<rect class="fl-paper ln t-h" x="6" y="${M[1] - 9}" width="8" height="18" rx="1.5"/>`, dot(F, 1.6, "a"));
+  out.push(text([48, M[1] + 40], "receiver", "lb"));
   out.push(line([M, gx(theta)], "a"), line([gx(theta - spot), gx(theta + spot)], "a", " trace"), dot(gx(theta), 2.4, "a"));
   out.push(`<path class="ln t-f mirror" d="${dOf([polar(M, 30, 45 + theta / 2), polar(M, 30, 225 + theta / 2)])}"/>`);
   out.push(`<path class="ln t-h mirror" d="${dOf([polar(M, 30, 45 + now / 2), polar(M, 30, 225 + now / 2)])}"/>`);
@@ -431,7 +452,7 @@ export function walkoffFig(L, a = {}) {
   out.push(`<circle class="fl t-a" opacity="0.3" cx="${n(c[0])}" cy="${n(c[1])}" r="${rb}"/>`, `<g clip-path="url(#gd-wo-stop)"><circle class="fl t-a" cx="${n(c[0])}" cy="${n(c[1])}" r="${rb}"/></g>`);
   out.push(text([Q[0], 166], `${v("δ")} = ${pad(Math.abs(mr).toFixed(2), 4)} mrad`, "lb hd"));
   out.push(text([Q[0], 186], `${pad(Math.round(inside(rs, rb, Math.abs(mr) * px) * 100), 3)} % of the echo passes`, "lb"));
-  return svg(560, 240, `Left, a galvo mirror sends a pulse ${Math.round(R)} m down; by the time its echo returns the mirror has turned on, and the receiver's field of view has moved ${n(mr)} milliradians past the lit spot. Right, the echo's image on a 1 mrad field stop, offset by that walk-off.`, out);
+  return svg(560, 240, `Left, a small injection mirror puts the laser pulse onto a galvo mirror, which sends it ${Math.round(R)} m down; by the time its echo returns the mirror has turned on, so the receiver's field of view, which looks out through the same mirror, has moved ${n(mr)} milliradians past the lit spot, and the receiving telescope focuses the echo beside its pinhole. Right, the echo's image on a 1 mrad field stop, offset by that walk-off.`, out);
 }
 
 // ---------------------------------------------------------------- the drawings' animations
