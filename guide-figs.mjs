@@ -575,16 +575,26 @@ export function syncFig(L, a = {}) {
   out.push(line([[xs, sy], top], "a"), line([[xs, sy - 36], [xs, sy - 22]], "a", " trace"));
   out.push(op(solo, shape([[xs - 3.2, sy - 24], [xs, sy - 36], [xs + 3.2, sy - 24]], "fl t-a")));
   out.push(dot([xs, sy], 2.4, "a"), dot([xs, 148], 2.4, "a"), dot(top, 3.2, "a"));
+  // each reading sits on the chart beside its own point on the shot's line: right of it, crossfading to the left near
+  // the right edge, so nothing jumps as the shot sweeps
+  const c = sensor(s);
+  const fmt = (x, d) => x.toFixed(d).replace(/^(\d+)(\d{3})\./, "$1 $2.").replace(/(\.\d{3})(\d+)/, "$1 $2");
+  const side = ease((xs - 326) / 32);
+  const read = (y, str, yl = y) => op(1 - side, text([xs + 8, y], str, "lb hd halo", "start")) + op(side, text([xs - 8, yl], str, "lb hd halo", "end"));
+  // the roll reading rides just above the curve wherever the text spans it, so a steep stretch never runs through it
+  const over = (xa, xb) => {
+    let y = top[1];
+    for (let x = Math.max(X0, xa); x <= Math.min(X1, xb); x += 2) y = Math.min(y, Yr(lin(t0 + (x - X0) / k)));
+    return Math.max(22, y - 7);
+  };
+  out.push(read(over(xs, xs + 72), `${roll < 0 ? "−" : "+"}${Math.abs(roll).toFixed(3)}°`, over(xs - 72, xs)));
+  out.push(read(142, `${v("t")}${sub("GPS")} = ${fmt(T1 + s, 6)} s`));
+  out.push(read(sy - 6, `${v("c")} = ${fmt(c, 6)} s`));
   // the window's width, across the top
   const wide = W >= 1 ? `${W.toFixed(2)} s` : W >= 1e-3 ? `${(W * 1e3).toFixed(W >= 0.1 ? 0 : 1)} ms` : `${(W * 1e6).toFixed(W >= 1e-4 ? 0 : 1)} µs`;
   out.unshift('<g transform="translate(0 10)">');
   out.push("</g>", dim([X0, 18], [X1, 18], "s"), text([(X0 + X1) / 2, 11], wide, "lb hd"));
-  const c = sensor(s);
-  const fmt = (x, d) => x.toFixed(d).replace(/^(\d+)(\d{3})\./, "$1 $2.").replace(/(\.\d{3})(\d+)/, "$1 $2");
-  out.push(text([8, 314], `roll ${roll < 0 ? "−" : "+"}${pad(Math.abs(roll).toFixed(3), 5)}°`, "lb hd", "start"));
-  out.push(text([234, 314], `${v("c")} = ${fmt(c, 6)} s`, "lb hd", "middle"));
-  out.push(text([X1, 314], `${v("t")}${sub("GPS")} = ${fmt(T1 + s, 6)} s`, "lb hd", "end"));
-  return svg(560, 326, `A timing diagram on one true time axis, ${wide} wide. At the top, the aircraft's roll from the trajectory, blended from IMU samples 200 times a second and GNSS fixes 5 times a second. Below, GPS time and the receiver's PPS, a pulse on the edge of each second followed by a message naming it. At the bottom, the sensor clock, offset and running slightly fast, logs each PPS edge as a mark beside its stream of shots. One shot logged at ${fmt(c, 6)} s on the sensor clock falls ${n(s)} of the way between the marks, so its GPS time is ${fmt(T1 + s, 6)} s, where the trajectory, a straight line between the IMU samples on either side, has the aircraft rolled ${roll.toFixed(3)} degrees. The chart zooms in on the shot to 12 milliseconds, where the IMU samples 5 ms apart appear, and to 25 microseconds, where single shots ${n(1e6 / L.prf)} microseconds apart appear.`, out);
+  return svg(560, 292, `A timing diagram on one true time axis, ${wide} wide. At the top, the aircraft's roll from the trajectory, blended from IMU samples 200 times a second and GNSS fixes 5 times a second. Below, GPS time and the receiver's PPS, a pulse on the edge of each second followed by a message naming it. At the bottom, the sensor clock, offset and running slightly fast, logs each PPS edge as a mark beside its stream of shots. One shot logged at ${fmt(c, 6)} s on the sensor clock falls ${n(s)} of the way between the marks, so its GPS time is ${fmt(T1 + s, 6)} s, where the trajectory, a straight line between the IMU samples on either side, has the aircraft rolled ${roll.toFixed(3)} degrees. The chart zooms in on the shot to 12 milliseconds, where the IMU samples 5 ms apart appear, and to 25 microseconds, where single shots ${n(1e6 / L.prf)} microseconds apart appear.`, out);
 }
 
 // ---------------------------------------------------------------- the drawings' animations
