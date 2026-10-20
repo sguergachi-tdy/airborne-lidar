@@ -78,7 +78,8 @@
   // where the outgoing beam leaves the scan element, and its direction
   function beamOf(pose) {
     const d = pose.d;
-    let o = [0, 0, D.zb];
+    const [tx] = D.tx[cfg.rx] ?? [0, 0];
+    let o = [tx, 0, D.zb];
     if (cfg.scanner === "polygon") {
       const { rin } = HX.polygon;
       const [, ay, az] = HX.polygon.axis;
@@ -88,9 +89,10 @@
       const a = (225 * DEG) + local;
       const ny = Math.cos(a);
       const nz = Math.sin(a);
-      o = [0, ay + (rin - nz * (D.zb - az)) / ny, D.zb];
-    } else if (cfg.scanner === "risley") o = [0, 0, 2];
-    else if (cfg.scanner === "flash") o = [0, 0, 2];
+      o = [tx, ay + (rin - nz * (D.zb - az)) / ny, D.zb];
+    } else if (cfg.scanner === "palmer" && tx) o = [tx, (-pose.n[0] * tx) / pose.n[1], D.zb];
+    else if (cfg.scanner === "risley") o = [tx, 0, 2];
+    else if (cfg.scanner === "flash") o = [tx, 0, 2];
     // the beam leaves through the top of the window glass
     const t = (o[2] + 4) / -d[2];
     return { o, d, exit: add(o, mul(d, t)) };
@@ -133,7 +135,8 @@
     if (out && ["galvo", "polygon", "palmer"].includes(cfg.scanner)) {
       const b = beamOf(pose);
       // on a polygon the facet meets the beam beyond the rest point, so the incoming beam runs on to it
-      const pts = b.o[1] > 0.05 ? [[0, 0, D.zb], b.o, b.exit] : [b.o, b.exit];
+      const [tx, y0] = D.tx[cfg.rx] ?? [0, 0];
+      const pts = b.o[1] > y0 + 0.05 ? [[tx, y0, D.zb], b.o, b.exit] : [b.o, b.exit];
       out.querySelector("path").setAttribute("d", pathOf(pts.map(at)));
       out.style.opacity = pose.on ? "1" : "0";
     }
@@ -1469,6 +1472,7 @@ ${label(R0 + 21, T1 - 12, "TIME", -90, " hd-name")}
     [/^inject/, () => (cfg.rx === "holed"
       ? { sys: "Optical path", title: "Turning mirror", does: "Turns the expanded beam from the laser onto the scanner's axis, aimed through the hole in the scraper mirror.", why: "Every optic downstream shares this one axis, so the telescope looks where the laser points.", spec: "fixed, 45°" }
       : { sys: "Optical path", title: "Injection mirror", does: "A small mirror in the middle of the receive path that puts the outgoing pulse onto the scanner's axis.", why: "Transmit and receive share one axis, so the telescope always looks where the laser points; the mirror shades only the centre of the echo.", spec: `coaxial · ${fmt(100 - 100 * (3.5 / 9) ** 2)}% of the echo kept` })],
+    [/^txfold/, () => ({ sys: "Optical path", title: "Transmit fold mirror", does: "Turns the expanded beam onto the scan mirror beside the receive telescope, not in front of it.", why: "In a biaxial layout transmit and receive use separate apertures side by side, so nothing shades the echo; the telescope's field of view must stay aligned with the beam across the whole scan and range.", spec: "biaxial · 100% of the echo kept" })],
     [/^fold/, () => ({ sys: "Optical path", title: "Fold mirror", does: "A fixed mirror that turns the beam down through the window.", why: "With prisms or a diffuser there is no scanning mirror, so this one does the turning.", spec: "fixed, 45°" })],
     [/^galvo\.encoder/, () => ({ sys: "Scanner", title: "Angle encoder", does: "Reads the mirror's angle at the moment of every shot.", why: "Each point needs its beam direction; combined with the POS trajectory it puts the point on the map.", spec: `±${SCANNERS.galvo.half}° · ${facts.scanRate} Hz` })],
     [/^(galvo|poly|palmer|risley)[.\d]*.*cable|^cable\.drive/, () => ({ sys: "Scanner", title: "Scanner drive cable", does: "Carries motor current one way and the encoder signal back.", why: "The angle must reach the timing board in step with every shot.", spec: "drive + encoder" })],
@@ -1478,7 +1482,7 @@ ${label(R0 + 21, T1 - 12, "TIME", -90, " hd-name")}
     [/^risley/, () => ({ sys: "Scanner", title: "Risley prism pair", does: `Two ${SCANNERS.risley.wedge}° glass wedges turning on the beam; their deflections add.`, why: "The two prisms' speeds, directions and phase choose the pattern: equal and opposite give a line, equal and together a circle, nearly equal a spiral, and others a rosette, with no part that swings back and forth.", spec: `${cfg.rate1} and ${sgn(cfg.rate2)} rev/s · phase ${cfg.phase}° · ${fmt(facts.swath)} m` })],
     [/^flash/, () => ({ sys: "Scanner", title: "Flash diffuser", does: "Spreads each pulse over the whole field of view.", why: "Every pixel of the detector array times its own echo: a full 3D frame per pulse, no moving parts.", spec: `${SCANNERS.flash.grid}×${SCANNERS.flash.grid} px · ${fmt(facts.frames)} frames/s` })],
     [/^drive/, () => ({ sys: "Scanner", title: "Scanner drive", does: "Servo electronics that power the scanner and hold its motion to the commanded profile.", why: "A steady angle profile keeps point spacing predictable.", spec: scanSpec() })],
-    [/^scope/, () => ({ sys: "Receiver", title: "Receiving telescope", does: "A cemented objective focuses the echo through a pinhole field stop; a relay lens re-collimates it through a narrowband filter, and a last lens focuses it onto the detector. Zoom in to see the section.", why: `An echo from ${FLIGHT.alt} m is many orders of magnitude weaker than the pulse, so collecting area counts; the pinhole and filter shut out sunlight from everywhere but the lit spot and the laser's line.`, spec: `round trip ${us((2 * FLIGHT.alt) / C)} · filter at ${LASERS[cfg.laser].name}` })],
+    [/^scope/, () => ({ sys: "Receiver", title: "Receiving telescope", does: `A cemented objective focuses the echo through a pinhole field stop; a relay lens re-collimates it through a narrowband filter, and a last lens focuses it onto the detector.${cfg.rx === "biaxial" ? " In the biaxial layout it sits beside the transmit beam, with a clear aperture." : ""} Zoom in to see the section.`, why: `An echo from ${FLIGHT.alt} m is many orders of magnitude weaker than the pulse, so collecting area counts; the pinhole and filter shut out sunlight from everywhere but the lit spot and the laser's line.`, spec: `round trip ${us((2 * FLIGHT.alt) / C)} · filter at ${LASERS[cfg.laser].name}` })],
     [/^det\.(spad|tec)/, () => ({ sys: "Receiver", title: "SPAD array", does: "A microlens row over an array of single-photon avalanche diodes, on a ceramic carrier and a two-stage Peltier cooler; each cell fires on a single photon.", why: "Photon counting needs far less laser energy per point; a surface shows where detections from many shots pile up above the sunlight background, and cooling keeps dark counts down.", spec: DETECTORS.photon.note })],
     [/^det\.(body|can|flange)/, () => ({ sys: "Receiver", title: "Avalanche photodiode", does: cfg.detector === "waveform" ? "A small APD die behind a window, wired straight to a transimpedance amplifier that turns its current into a voltage to be digitised." : "A sub-millimetre APD die on a ceramic submount inside a sealed TO can, behind a glass window; a gold bond wire carries its current to a pin.", why: "Gain inside the diode lifts a few hundred photons above the amplifier's noise; its speed and noise set how precisely an echo can be timed.", spec: DETECTORS[cfg.detector].note })],
     [/^det\.cfd/, () => ({ sys: "Receiver", title: "Constant-fraction discriminator", does: "Fires a stop pulse when an echo crosses a fixed fraction of its own peak.", why: "Strong and weak echoes are timed at the same point on their shape, so bright targets don't range short.", spec: "typically 4 to 8 returns per pulse" })],

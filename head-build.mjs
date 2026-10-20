@@ -48,6 +48,14 @@ const XF = G.frameOf([0, 0, ZB], [1, 0, 0], [0, 1, 0], [0, 0, 1]);
 const alongX = (y, z) => G.frameOf([0, y, z], [1, 0, 0], [0, 1, 0], [0, 0, 1]);
 const alongZ = (x, y) => G.frameOf([x, y, 0], [0, 0, 1], [1, 0, 0], [0, 1, 0]);
 const DOWNY = G.frameAlong([0, 0, ZB], [0, -1, 0]);
+// biaxial: the pulse meets the scan element TXB to one side of the axis, and the telescope's own aperture looks back
+// along the other side, at BX, so the two share the scanner but no optic
+const TXB = -9;
+const BX = 3;
+const BIAXF = G.frameAlong([BX, 0, ZB], [0, -1, 0]);
+const txOf = (rx) => (rx === "biaxial" ? TXB : 0);
+// where the incoming beam stops and the live outgoing beam takes over
+const y0Of = (rx) => (rx === "biaxial" ? -1.5 : 0);
 const PF = G.frameOf(HEADX.polygon.axis, [1, 0, 0], [0, 1, 0], [0, 0, 1]);
 const PALMER_AXIS = G.unit3([0, 1, 1]);
 const PALF = G.frameAlong([0, 0, ZB], PALMER_AXIS);
@@ -196,6 +204,8 @@ const RB = 9;
 const RXOPT = {
   holed: { F: HOLED.F, h: 3, sw: 22.5, sz: () => Infinity, so: [22.8, 25.6], sf: 40, baffles: [29.5, 34.5], sr: 46.5, filter: [49.2, 50.2], sl: 53.5, sd: 65.5 },
   inject: { F: DOWNY, h: 3.5, sw: -Infinity, sz: (det) => (det === "discrete" ? 119.5 : 120.5), so: [61.8, 65.6], sf: 86, baffles: [70.5, 75.5, 80.5], sr: 93.5, filter: [97.2, 98.2], sl: 102, sd: 114.5 },
+  // its own smaller aperture, and nothing in front of it: no shadow in the echo
+  biaxial: { F: BIAXF, rb: 6, h: 0, sw: -Infinity, sz: (det) => (det === "discrete" ? 119.5 : 120.5), so: [61.8, 65.6], sf: 86, baffles: [70.5, 75.5, 80.5], sr: 93.5, filter: [97.2, 98.2], sl: 102, sd: 114.5 },
 };
 function cutPlane(F) {
   const d = dot3(V, F.a);
@@ -222,13 +232,13 @@ function lensCut(C, sc, r, thick, edge, cls = "hd-cut-glass") {
   return cutPoly(C, [...front, ...back.reverse()], cls);
 }
 function lightCut(C, o) {
-  const { h, so, sf, sr, sl, sd } = o;
+  const { h, so, sf, sr, sl, sd, rb = RB } = o;
   const k1 = (sr - sf) / (sf - so[1]);
-  const [Rr, hr] = [RB * k1, h * k1];
+  const [Rr, hr] = [rb * k1, h * k1];
   const half = (sg) =>
     [
-      [[so[0] - 30, h], [so[0] - 30, RB], [so[1], RB], [so[1], h]],
-      [[so[1], h], [so[1], RB], [sf, 0]],
+      [[so[0] - 30, h], [so[0] - 30, rb], [so[1], rb], [so[1], h]],
+      [[so[1], h], [so[1], rb], [sf, 0]],
       [[sf, 0], [sr, Rr], [sr, hr]],
       [[sr, hr], [sr, Rr], [sl, Rr], [sl, hr]],
       [[sl, hr], [sl, Rr], [sd, 0]],
@@ -237,11 +247,11 @@ function lightCut(C, o) {
 }
 // the telescope's own optics: objective doublet in its cell, baffles, field stop, relay lens, filter and focusing lens
 function telescopeCut(C, o, bore) {
-  const { so, sf, sr, sl, filter, baffles } = o;
-  const Rc = RB + 0.8;
+  const { so, sf, sr, sl, filter, baffles, rb = RB } = o;
+  const Rc = rb + 0.8;
   const k1 = (sr - sf) / (sf - so[1]);
-  const Rr = RB * k1 + 1;
-  const cone = (s) => (RB * (sf - s)) / (sf - so[1]);
+  const Rr = rb * k1 + 1;
+  const cone = (s) => (rb * (sf - s)) / (sf - so[1]);
   let out = lightCut(C, o);
   // the objective: a biconvex crown element cemented to a flint meniscus, held between two retaining rings
   out += lensCut(C, so[0] + 1.3, Rc, 2.6, 0.8);
@@ -484,9 +494,20 @@ function bench() {
     const ZF = G.frameOf([0, 0, 0], [0, 0, 1], [1, 0, 0], [0, 1, 0]);
     const post = [c[0] - n[0] * 1.1, c[1] - n[1] * 1.1];
     const PF0 = alongZ(post[0], post[1]);
-    turned("inject.foot", PF0, [[0, 5], [3, 5]], { tone: "lo" }, { bevel: 0.3 });
-    turned("inject.post", PF0, [[3, 1.6], [44, 1.6]], { tone: "mid" });
-    prism("inject.mirror", ZF, poly, 44, 56, { tone: "hi" });
+    when("rx:inject|holed", CFG, () => {
+      turned("inject.foot", PF0, [[0, 5], [3, 5]], { tone: "lo" }, { bevel: 0.3 });
+      turned("inject.post", PF0, [[3, 1.6], [44, 1.6]], { tone: "mid" });
+      prism("inject.mirror", ZF, poly, 44, 56, { tone: "hi" });
+    });
+    // biaxial: a small fold mirror off to one side turns the beam to the scanner, clear of the telescope's view
+    when("rx:biaxial", CFG, () => {
+      const c2 = [TXB, LY];
+      const q = (a, b) => [c2[0] + t[0] * a - n[0] * b, c2[1] + t[1] * a - n[1] * b];
+      const P2 = alongZ(c2[0] - n[0] * 0.8, c2[1] - n[1] * 0.8);
+      turned("txfold.foot", P2, [[0, 4], [3, 4]], { tone: "lo" }, { bevel: 0.3 });
+      turned("txfold.post", P2, [[3, 1.2], [45, 1.2]], { tone: "mid" });
+      prism("txfold.mirror", ZF, [q(2.6, 0), q(-2.6, 0), q(-2.6, 1.6), q(2.6, 1.6)], 45, 55, { tone: "hi" });
+    });
   }
   // the receiving telescope behind the injection mirror, in two clamp rings on pedestals
   when("rx:inject", CFG, () => {
@@ -500,6 +521,20 @@ function bench() {
     for (const [i, s] of [[0, 66], [1, 92]]) {
       tube(`scope.ring${i}`, [[s, 21.5], [s + 6, 21.5]], { tone: "mid" }, { bevel: 0.4, extra: Dots(G.dotsOf(F, s + 3, 21.5, 6, P, { phase: 0.3 }), { size: 0.45, tone: "lo" }) });
       box(`scope.ped${i}`, [-8, -s - 6, 0], [8, -s, 28.5], { tone: "lo" }, { r: 0.4, bevel: 0.3, extra: Dots([at([-5, -s, 3]), at([5, -s, 3])], { size: 0.45, tone: "mid" }) });
+    }
+  });
+  // or: a biaxial receiver, its own telescope beside the transmit path, looking at the other half of the scan element
+  when("rx:biaxial", CFG, () => {
+    const F = BIAXF;
+    const tube = (name, profile, style, options = {}) => turned(name, F, profile, style, { ...options, extra: (options.extra ?? "") + cut(profile, 11.4) });
+    tube("scope.tube", [[60, 14], [65, 14], [65, 12.8], [66, 12.8]], { tone: "lo" }, {
+      extra: Ln(G.arcOf(F, 60, 11.4, P), { tone: "mid" }) + Ln(G.ribsOf(F, 60.4, 64.6, 14, 24, P, { seams: true }), { tone: "faint" }),
+    });
+    tube("scope.mid", [[72, 12.8], [92, 12.8]], { tone: "lo" });
+    tube("scope.rear", [[98, 12.8], [104, 12.8], [104, 12], [108, 12]], { tone: "lo" });
+    for (const [i, s] of [[0, 66], [1, 92]]) {
+      tube(`scope.ring${i}`, [[s, 15], [s + 6, 15]], { tone: "mid" }, { bevel: 0.4, extra: Dots(G.dotsOf(F, s + 3, 15, 6, P, { phase: 0.3 }), { size: 0.45, tone: "lo" }) });
+      box(`scope.ped${i}`, [BX - 7, -s - 6, 0], [BX + 7, -s, ZB - 15], { tone: "lo" }, { r: 0.4, bevel: 0.3, extra: Dots([at([BX - 4, -s, 3]), at([BX + 4, -s, 3])], { size: 0.45, tone: "mid" }) });
     }
   });
   // or: a holed (scraper) mirror on the shared axis; the pulse leaves through its hole, the echo reflects off the
@@ -563,6 +598,12 @@ function bench() {
   // beams that never move: expander to the injection mirror to the scanner
   // the echo comes back up the shared axis as a wide bundle; the injection mirror shades its centre
   when("rx:inject", CFG, () => beam("beam.inject", [[-12, LY, ZB], [0, LY, ZB], [0, 0, ZB]], { extra: rxLight(bundle([0, -6, ZB], [0, -60, ZB], 9), bundle([0, LY, ZB], [0, -60, ZB], 3.5)) }));
+  // biaxial: the pulse runs up one side to the scanner; the echo comes back down the other, whole
+  when("rx:biaxial", CFG, () => {
+    beam("beam.inject", [[-12, LY, ZB], [TXB, LY, ZB], [TXB, y0Of("biaxial"), ZB]]);
+    // the echo has its own item, ordered by its true width, so it lands on the telescope's front face
+    put("beam.echo", [BX, -33, ZB], rxLight(bundle([BX, -6, ZB], [BX, -60, ZB], 6)), [A.tube([[BX, -6, ZB], [BX, -59.4, ZB]], 6)]);
+  });
   // through the cell's bore and out of the hole in the mirror's face; the echo's rim reflects off the annulus into
   // the telescope and its centre falls back through the hole
   when("rx:holed", CFG, () => {
@@ -733,8 +774,10 @@ function scanners(cfg) {
     disc("flash.diffuser", F, 10, 10.8, 12, { tone: "hi", lit: true, className: "hd-frost" });
   });
   // the outgoing beam: rebuilt each frame in the page
-  const tail = matches("scanner:risley", cfg) ? [[0, 0, ZB], [0, 0, 26.8]] : matches("scanner:flash", cfg) ? [[0, 0, ZB], [0, 0, 10.8]] : [[0, 0, ZB], [0, 0, -4]];
-  WHEN = `scanner:${cfg.scanner}`;
+  const [tx, y0] = [txOf(CFG.rx), y0Of(CFG.rx)];
+  const head = y0 ? [[tx, y0, ZB], [tx, 0, ZB]] : [[tx, 0, ZB]];
+  const tail = [...head, matches("scanner:risley", cfg) ? [tx, 0, 26.8] : matches("scanner:flash", cfg) ? [tx, 0, 10.8] : [tx, 0, -4]];
+  WHEN = `scanner:${cfg.scanner} rx:${tx ? "biaxial" : "inject|holed"}`;
   beam("beam.out", tail, { live: "out" });
   WHEN = "";
 }
@@ -742,10 +785,11 @@ function scanners(cfg) {
 // the SMA and its coax under the package: inject mode drops at the far wall, holed mode runs back along the PSU's top
 function coax(name, z, block = true) {
   const holed = CFG.rx === "holed";
-  const [x, y] = holed ? [67, -32] : [0, -116];
+  const xb = CFG.rx === "biaxial" ? BX : 0;
+  const [x, y] = holed ? [67, -32] : [xb, -116];
   if (block) box(`${name}.sma`, [x - 2.5, y - 2.5, z - 3], [x + 2.5, y + 2.5, z], { tone: "mid" }, { r: 0.3 });
   const z0 = block ? z - 3 : z;
-  const route = holed ? [[x, y, z0], [x, y, 31.5], [x, -116, 31.5], [41, -116, 31.5], [41, -116, 13]] : [[0, -116, z0], [0, -116, 24], [41, -116, 24], [41, -116, 13]];
+  const route = holed ? [[x, y, z0], [x, y, 31.5], [x, -116, 31.5], [41, -116, 31.5], [41, -116, 13]] : [[xb, -116, z0], [xb, -116, 24], [41, -116, 24], [41, -116, 13]];
   cable(name, route, 0.8, { shells: [true, true], bend: holed ? 3.5 : 5 });
 }
 function chip(name, [x0, y0], [x1, y1], h = 1.4, tone = "lo", extra = "") {
@@ -755,9 +799,10 @@ function chip(name, [x0, y0], [x1, y1], h = 1.4, tone = "lo", extra = "") {
 }
 function detectors(cfg) {
   const holed = CFG.rx === "holed";
-  const F = holed ? HOLED.F : DOWNY;
+  const biax = CFG.rx === "biaxial";
+  const F = holed ? HOLED.F : biax ? BIAXF : DOWNY;
   const s0 = holed ? 59 : 108;
-  const tag = holed ? "rx:holed" : "rx:inject";
+  const tag = `rx:${CFG.rx}`;
   const optic = (fn) => when(tag, CFG, fn);
   const xc = (det, profile, bore, options = {}) => cut(profile, bore, { det, wall: 0.6, ...options });
   when("detector:discrete", cfg, () => {
@@ -788,8 +833,9 @@ function detectors(cfg) {
         box("det.spad", [61, -44, 38], [73, -20, 62], { tone: "hi" }, { r: 0.6, bevel: 0.4, extra: Ln(k.sideSeam({ x: 61, y: -44, w: 12, d: 24, r: 0.6 }, 44, P, 2), { tone: "faint" }) + spad });
         for (let i = 0; i < 6; i++) box(`det.tec${i}`, [63, -42 + i * 4, 62], [71, -40.5 + i * 4, 66], { tone: "lo" }, { r: 0 });
       } else {
-        box("det.spad", [-12, -122, 38], [12, -110, 62], { tone: "hi" }, { r: 0.6, bevel: 0.4, extra: Ln(k.sideSeam({ x: -12, y: -122, w: 24, d: 12, r: 0.6 }, 44, P, 2), { tone: "faint" }) + spad });
-        for (let i = 0; i < 6; i++) box(`det.tec${i}`, [-10 + i * 4, -120, 62], [-8.5 + i * 4, -112, 66], { tone: "lo" }, { r: 0 });
+        const x0 = biax ? BX : 0;
+        box("det.spad", [x0 - 12, -122, 38], [x0 + 12, -110, 62], { tone: "hi" }, { r: 0.6, bevel: 0.4, extra: Ln(k.sideSeam({ x: x0 - 12, y: -122, w: 24, d: 12, r: 0.6 }, 44, P, 2), { tone: "faint" }) + spad });
+        for (let i = 0; i < 6; i++) box(`det.tec${i}`, [x0 - 10 + i * 4, -120, 62], [x0 - 8.5 + i * 4, -112, 66], { tone: "lo" }, { r: 0 });
       }
       coax("det.coax", 38, false);
     });
@@ -808,7 +854,7 @@ const SCAN_CFGS = [
 const LASER_IDS = ["yag", "fibre", "green", "diode"];
 const DET_IDS = ["discrete", "waveform", "photon"];
 export const CONFIGS = [];
-for (const rx of ["inject", "holed"])
+for (const rx of ["inject", "holed", "biaxial"])
   SCAN_CFGS.forEach((s, i) => {
     for (let j = 0; j < 3; j++) CONFIGS.push({ facets: 4, ...s, laser: LASER_IDS[(i + j) % LASER_IDS.length], detector: DET_IDS[(i + 2 * j) % 3], rx });
   });
@@ -975,7 +1021,7 @@ const SUB = [
 ];
 const GROUPS = [
   { title: "Laser", rows: [{ key: "laser", label: "Wavelength", options: [["yag", "1064 nm"], ["fibre", "1550 nm"], ["green", "532 nm"], ["diode", "905 nm"]] }, { key: "prf", label: "Pulse rate (PRF)", options: [[100e3, "100k"], [250e3, "250k"], [500e3, "500k"], [1e6, "1M"], [2e6, "2M"], [4e6, "4M"]] }] },
-  { title: "Receiver", rows: [{ key: "detector", label: "Detection", options: [["discrete", "Discrete"], ["waveform", "Waveform"], ["photon", "Photon"]] }, { key: "rx", label: "Coaxial mirror", options: [["inject", "Injection"], ["holed", "Holed"]] }] },
+  { title: "Receiver", rows: [{ key: "detector", label: "Detection", options: [["discrete", "Discrete"], ["waveform", "Waveform"], ["photon", "Photon"]] }, { key: "rx", label: "Optical layout", options: [["inject", "Injection"], ["holed", "Holed"], ["biaxial", "Biaxial"]] }] },
   { title: "Navigation", rows: [{ key: "nav", label: "Position and attitude", options: [["ins", "GNSS + IMU"], ["gnss", "GNSS only"], ["none", "None"]] }] },
 ];
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
@@ -1052,7 +1098,9 @@ export function buildHead() {
     risley: { r1: 32, r2: 30, z1: 8, z2: 26.8 },
     holed: { c: HOLED.c, a: HOLED.a, b: HOLED.b, hole: HOLED.hole },
     // where the zoom ring looks first: the middle of each design's receive path
-    focus: { holed: at([42, -32, ZB]), inject: at([0, -88, ZB]) },
+    focus: { holed: at([42, -32, ZB]), inject: at([0, -88, ZB]), biaxial: at([BX, -88, ZB]) },
+    // where the pulse meets the scan element, and where the incoming beam hands over to the live one
+    tx: { inject: [0, 0], holed: [0, 0], biaxial: [TXB, y0Of("biaxial")] },
   };
   return { stage, controls, side, DATA, items: sorted.length };
 }
