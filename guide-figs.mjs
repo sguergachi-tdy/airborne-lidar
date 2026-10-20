@@ -581,9 +581,9 @@ export function syncFig(L, a = {}) {
   out.push("</g>", dim([X0, 18], [X1, 18], "s"), text([(X0 + X1) / 2, 11], wide, "lb hd"));
   const c = sensor(s);
   const fmt = (x, d) => x.toFixed(d).replace(/^(\d+)(\d{3})\./, "$1 $2.").replace(/(\.\d{3})(\d+)/, "$1 $2");
-  out.push(text([8, 314], `${v("c")} = ${fmt(c, 6)} s`, "lb hd", "start"));
-  out.push(text([316, 314], `${v("t")}${sub("GPS")} = ${fmt(T1 + s, 6)} s`, "lb hd", "middle"));
-  out.push(text([X1, 314], `roll ${roll < 0 ? "−" : "+"}${pad(Math.abs(roll).toFixed(3), 5)}°`, "lb hd", "end"));
+  out.push(text([8, 314], `roll ${roll < 0 ? "−" : "+"}${pad(Math.abs(roll).toFixed(3), 5)}°`, "lb hd", "start"));
+  out.push(text([234, 314], `${v("c")} = ${fmt(c, 6)} s`, "lb hd", "middle"));
+  out.push(text([X1, 314], `${v("t")}${sub("GPS")} = ${fmt(T1 + s, 6)} s`, "lb hd", "end"));
   return svg(560, 326, `A timing diagram on one true time axis, ${wide} wide. At the top, the aircraft's roll from the trajectory, blended from IMU samples 200 times a second and GNSS fixes 5 times a second. Below, GPS time and the receiver's PPS, a pulse on the edge of each second followed by a message naming it. At the bottom, the sensor clock, offset and running slightly fast, logs each PPS edge as a mark beside its stream of shots. One shot logged at ${fmt(c, 6)} s on the sensor clock falls ${n(s)} of the way between the marks, so its GPS time is ${fmt(T1 + s, 6)} s, where the trajectory, a straight line between the IMU samples on either side, has the aircraft rolled ${roll.toFixed(3)} degrees. The chart zooms in on the shot to 12 milliseconds, where the IMU samples 5 ms apart appear, and to 25 microseconds, where single shots ${n(1e6 / L.prf)} microseconds apart appear.`, out);
 }
 
