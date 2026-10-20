@@ -607,8 +607,8 @@ export function wavelengthFig(LASERS) {
   for (const L of lasers) for (const key of Object.keys(SPECTRA)) out.push(dot([X(L.nm), Y(spectrumAt(SPECTRA[key], L.nm))], 2.4, "a"));
   // the table: what each laser gets back. Dot area follows the share of light returned
   const top = 244;
-  ["green", "diode", "Nd:YAG", "Er fibre"].forEach((name, i) => out.push(text([COL[i], top], name, "lb hd")));
-  out.push(line([[0, top + 12], [X(1700), top + 12]], "f"));
+  ["green", "diode", "Nd:YAG", "Er fibre"].forEach((name, i) => out.push(text([COL[i], top], `${lasers[i].nm} nm`, "lb hd"), text([COL[i], top + 18], `(${name})`, "lb")));
+  out.push(line([[0, top + 30], [X(1700), top + 30]], "f"));
   const at = (key) => lasers.map((L) => ({ r: spectrumAt(SPECTRA[key], L.nm) }));
   const rows = [
     ["Leaves", at("leaves")],
@@ -619,7 +619,7 @@ export function wavelengthFig(LASERS) {
     ["Bed under water", [{ r: 0.12, note: "15 m" }, { note: "10 cm" }, { note: "6 cm" }, { note: "0.6 mm" }]],
     ["Through cloud", [{ note: "blocked" }, { note: "blocked" }, { note: "blocked" }, { note: "blocked" }]],
   ];
-  let y = top + 34;
+  let y = top + 52;
   for (const [label, cells] of rows) {
     const noted = cells.some((c) => c.note);
     out.push(text([0, y + 4], label, "lb hd", "start"));
