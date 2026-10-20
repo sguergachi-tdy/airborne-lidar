@@ -61,6 +61,7 @@ const WIKI = [
   [/Peltier cooler/, "Thermoelectric heat pump"],
   [/\bRisley\b/, "Risley prisms"],
   [/Nd:YAG/, "Nd:YAG laser"],
+  [/Nd:YVO₄/, "Nd:YVO4"],
   [/laser diode/, "Laser diode"],
   [/leap seconds/, "Leap second"],
   [/\bNOHD\b/, "Laser safety"],
@@ -237,7 +238,7 @@ export function guideHtml({ LIDAR, HM, HF, CAL, fig1, fig2, fig3, scans }) {
   <section class="gd-col">
     ${tryIt("Turn the zoom ring on the loupe past 2× and the receive path opens in half-section. The time ring on the opposite edge slows the head to a millionth of real time, where single pulses travel as bullets. Click to pause.")}
     <h3>The way out</h3>
-    <p>Depending on the laser, the beam first passes a <em>beam expander</em> or a collimator. A solid-state laser such as the Nd:YAG already gives a narrow, nearly parallel beam, and a beam expander, a small Galilean telescope, makes it several times wider. A wider beam spreads less, so it lights a smaller footprint on the ground. A fibre laser's light leaves the tip of its fibre spreading quickly, so a fibre collimator first makes it parallel; in Figure 2 an expander then widens it as well. A small mirror turns the beam into the scanner and out through the window.</p>
+    <p>Depending on the laser, the beam first passes a <em>beam expander</em> or a collimator. A solid-state laser such as the Nd:YAG or Nd:YVO₄ spreads less than a fibre laser, but still too much for mapping from high above. A beam expander, a small Galilean telescope, cuts the spread further: an expander that makes the beam several times wider makes it spread that many times less. The trade is a wider beam leaving the sensor, but after a short distance the slower spread wins, and far below it lights a much smaller footprint on the ground. A fibre laser's light leaves the tip of its fibre spreading quickly, so a fibre collimator first makes it parallel; in Figure 2 an expander then cuts its spread as well. A small mirror turns the beam into the scanner and out through the window.</p>
     <h3>The way back</h3>
     <p>The echo returns through the same scanner to the receiving telescope. Its objective lens focuses the light onto a <em>pinhole field stop</em>, which blocks light from anywhere but the lit spot. A relay lens makes the light parallel again for a <em>narrowband filter</em> that rejects sunlight. The light then reaches the detector, either an avalanche photodiode (APD) in a TO can wired to a transimpedance amplifier, or a microlensed single-photon (SPAD) array on a Peltier cooler.</p>
     <h3>Sharing one path</h3>
