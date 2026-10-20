@@ -1498,7 +1498,7 @@ html {
 }
 
 /* small caps belong to running serif text; headings, labels and sans settings keep full capitals */
-.gd :is(h1, h2, h3, dt, th, .gd-toc, .gd-stats, .gd-label, .gd-meta, .gd-try, .gd-colophon, .gd-table) .sc {
+.gd :is(h1, h2, h3, dt, th, .gd-toc, .gd-stats, .gd-label, .gd-try, .gd-colophon, .gd-table) .sc {
   font-variant-caps: normal;
   letter-spacing: inherit;
 }
@@ -1536,6 +1536,26 @@ html {
   text-transform: uppercase;
   color: var(--gd-accent);
   margin: 0 !important;
+}
+
+.gd-read {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 10px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  font-weight: 400;
+  color: var(--gd-soft);
+}
+
+.gd-read::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--gd-accent);
+  opacity: 0.8;
 }
 
 /* the reader's manual override of the system theme */
@@ -1594,32 +1614,6 @@ html {
   text-wrap: balance;
   hyphens: manual;
   margin-bottom: 32px !important;
-}
-
-.gd-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 22px;
-  padding: 14px 0;
-  border-block: 1px solid var(--gd-rule);
-  font: 12px/1.5 var(--gd-mono);
-  color: var(--gd-soft);
-  hyphens: manual;
-}
-
-.gd-meta span {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-}
-
-.gd-meta span::before {
-  content: "";
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--gd-accent);
-  opacity: 0.8;
 }
 
 /* contents */
@@ -2280,10 +2274,9 @@ html {
 </style>
 <article class="gd">
   <header class="gd-mast gd-col">
-    <div class="gd-mast-top"><p class="gd-kicker">A field guide</p><div class="gd-theme" role="group" aria-label="Colour theme" hidden><button type="button" data-theme-pick="auto" aria-pressed="false">Auto</button><button type="button" data-theme-pick="light" aria-pressed="false">Light</button><button type="button" data-theme-pick="dark" aria-pressed="false">Dark</button></div></div>
+    <div class="gd-mast-top"><p class="gd-kicker">A field guide<span class="gd-read">15 min read</span></p><div class="gd-theme" role="group" aria-label="Colour theme" hidden><button type="button" data-theme-pick="auto" aria-pressed="false">Auto</button><button type="button" data-theme-pick="light" aria-pressed="false">Light</button><button type="button" data-theme-pick="dark" aria-pressed="false">Dark</button></div></div>
     <h1>How airborne lidar works</h1>
     <p class="gd-dek">An airborne <a class="gd-wiki" href="https://en.wikipedia.org/wiki/Lidar" target="_blank" rel="noopener" title="Wikipedia: Lidar">lidar</a> maps the ground from an aircraft with a laser. It fires short pulses of light downwards, hundreds of thousands a second, and times how long each takes to bounce back, which gives the distance. Add where the aircraft is and which way it points, and every echo becomes a point on the map.</p>
-    <p class="gd-meta"><span>About 15 minutes</span></p>
     <nav class="gd-toc" aria-label="Contents">
       <span class="gd-label">Contents</span>
       <ol><li><a href="#ranging"><span class="gd-toc-n">01</span><span>Ranging with light</span></a></li><li><a href="#prf"><span class="gd-toc-n">02</span><span>Pulses and the <span class="sc">PRF</span></span></a></li><li><a href="#scanning"><span class="gd-toc-n">03</span><span>Sweeping the beam</span></a></li><li><a href="#position"><span class="gd-toc-n">04</span><span>Knowing where you are</span></a></li><li><a href="#returns"><span class="gd-toc-n">05</span><span>What comes back</span></a></li><li><a href="#head"><span class="gd-toc-n">06</span><span>Inside the sensor head</span></a></li><li><a href="#scanners"><span class="gd-toc-n">07</span><span>Five ways to scan</span></a></li><li><a href="#spacing"><span class="gd-toc-n">08</span><span>Scan frequency and point spacing</span></a></li><li><a href="#wavelength"><span class="gd-toc-n">09</span><span>Choosing a wavelength</span></a></li><li><a href="#receivers"><span class="gd-toc-n">10</span><span>Listening for echoes</span></a></li><li><a href="#boresight"><span class="gd-toc-n">11</span><span>Putting each point on the map</span></a></li><li><a href="#glossary"><span class="gd-toc-n">+</span><span>Glossary</span></a></li></ol>

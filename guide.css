@@ -88,7 +88,7 @@ html {
 }
 
 /* small caps belong to running serif text; headings, labels and sans settings keep full capitals */
-.gd :is(h1, h2, h3, dt, th, .gd-toc, .gd-stats, .gd-label, .gd-meta, .gd-try, .gd-colophon, .gd-table) .sc {
+.gd :is(h1, h2, h3, dt, th, .gd-toc, .gd-stats, .gd-label, .gd-try, .gd-colophon, .gd-table) .sc {
   font-variant-caps: normal;
   letter-spacing: inherit;
 }
@@ -126,6 +126,26 @@ html {
   text-transform: uppercase;
   color: var(--gd-accent);
   margin: 0 !important;
+}
+
+.gd-read {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 10px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  font-weight: 400;
+  color: var(--gd-soft);
+}
+
+.gd-read::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--gd-accent);
+  opacity: 0.8;
 }
 
 /* the reader's manual override of the system theme */
@@ -184,32 +204,6 @@ html {
   text-wrap: balance;
   hyphens: manual;
   margin-bottom: 32px !important;
-}
-
-.gd-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 22px;
-  padding: 14px 0;
-  border-block: 1px solid var(--gd-rule);
-  font: 12px/1.5 var(--gd-mono);
-  color: var(--gd-soft);
-  hyphens: manual;
-}
-
-.gd-meta span {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-}
-
-.gd-meta span::before {
-  content: "";
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--gd-accent);
-  opacity: 0.8;
 }
 
 /* contents */
