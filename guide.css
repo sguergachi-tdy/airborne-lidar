@@ -129,19 +129,20 @@ html {
 }
 
 .gd-read {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.9em;
   margin-left: 0.9em;
+  white-space: nowrap;
   color: var(--gd-soft);
 }
 
 .gd-read::before {
   content: "";
+  display: inline-block;
   width: 3px;
   height: 3px;
+  margin-right: 0.9em;
   border-radius: 50%;
   background: currentColor;
+  vertical-align: calc(0.36em - 1.5px);
 }
 
 /* the reader's manual override of the system theme */
