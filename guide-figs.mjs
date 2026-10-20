@@ -482,8 +482,9 @@ export function syncFig(L, a = {}) {
   const inX = (x, m = 0) => x >= X0 + m && x <= X1 - m;
   const per = MARKS[1] - MARKS[0];
   const sensor = (t) => MARKS[0] + t * per;
-  const label = (y, s) => text([8, y], s, "lb", "start");
   const op = (o, body) => (o <= 0 ? "" : o >= 1 ? body : `<g opacity="${n(o, 2)}">${body}</g>`);
+  // a lane's label, and the accent that flashes over it when the zoom has come down to show that lane
+  const label = (y, s, f = 0) => text([8, y], s, "lb", "start") + op(f, text([8, y], s, "lb num", "start"));
   const ms = (v) => String(Math.round((v - Math.floor(v)) * 1e3) % 1000).padStart(3, "0");
   const us = (v) => String(Math.round((v - Math.floor(v)) * 1e6) % 1e6).padStart(6, "0").replace(/^(\d{3})/, "$1 ");
   const secs = (v) => String(Math.round(v)).replace(/^(\d+)(\d{3})$/, "$1 $2");
@@ -523,7 +524,7 @@ export function syncFig(L, a = {}) {
   out.push(`<g clip-path="url(#gd-sync-roll)">${dash([[X0, Yr(0)], [X1, Yr(0)]], "f")}${line(curve, "h")}</g>`, label(62, "roll"));
   // the IMU, 200 samples a second; spread out, each sample shows where it sits on the trajectory
   const imu = ks.map((i) => `M${n(X(i / 200))} 100L${n(X(i / 200))} 95`);
-  out.push(`<path class="ln t-f" d="${imu.join("")}"/>`, line([[X0, 100], [X1, 100]], "s"), label(104, "IMU"));
+  out.push(`<path class="ln t-f" d="${imu.join("")}"/>`, line([[X0, 100], [X1, 100]], "s"), label(104, "IMU", a.fi ?? 0));
   const ksp = k / 200;
   const i0 = Math.floor(s * 200);
   const pts = [];
@@ -554,7 +555,7 @@ export function syncFig(L, a = {}) {
   const sy = 250;
   const psp = k / L.prf;
   const solo = ease((psp - 3) / 9);
-  out.push(op(1 - solo, `<rect class="wash" x="${X0}" y="${sy - 34}" width="${n(X1 - X0)}" height="10"/>`), label(225, "shots"));
+  out.push(op(1 - solo, `<rect class="wash" x="${X0}" y="${sy - 34}" width="${n(X1 - X0)}" height="10"/>`), label(225, "shots", a.fs ?? 0));
   if (solo > 0) {
     const hw = Math.min(3.2, psp * 0.3);
     const tri = [];
@@ -684,13 +685,16 @@ export const ANIMS = {
     dur: 10,
     at: (t) => ({ a: { u: t / 2.5, R: Math.round(kf(t, [[1.2, 1000], [2.8, 2000], [4.4, 2000], [6.2, 300], [7.6, 300], [9.2, 1000]])) } }),
   },
-  // the chart zooms in on the shot to 12 ms and 25 µs and back out; then the shot slides along the sensor clock to the
-  // next second, back past the first and home, and GPS time and roll follow
+  // the chart zooms in on the shot to 12 ms and 25 µs and back out, flashing the lane each zoom has come down to show
+  // (the IMU's samples, then single shots); then the shot slides along the sensor clock to the next second, back past
+  // the first and home, and GPS time and roll follow
   sync: {
     dur: 19.6,
     at: (t) => ({
       a: {
         z: kf(t, [[0.6, 0], [2.8, 1], [4.8, 1], [7, 2], [9, 2], [10.6, 0]]),
+        fi: t > 2.6 && t < 4.4 ? Math.sin((Math.PI * 3 * (t - 2.6)) / 1.8) ** 2 : 0,
+        fs: t > 6.8 && t < 8.6 ? Math.sin((Math.PI * 3 * (t - 6.8)) / 1.8) ** 2 : 0,
         s: kf(t, [[11, 0.382364], [13, 1.02], [13.8, 1.02], [16.2, -0.1], [17, -0.1], [19, 0.382364]]),
       },
     }),
