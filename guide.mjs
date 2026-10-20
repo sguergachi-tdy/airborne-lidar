@@ -1,6 +1,6 @@
 // The field guide that wraps the three figures: chapters, equations, tables and a glossary, every number taken from the
 // same models that drive the drawings.
-import { rangingFig, maxRangeFig, swathFig, spacingFig, densityFig, georefFig, wavelengthFig, patternFig, echoFig } from "./guide-figs.mjs";
+import { rangingFig, maxRangeFig, swathFig, spacingFig, densityFig, georefFig, walkoffFig, wavelengthFig, patternFig, echoFig } from "./guide-figs.mjs";
 import { LASERS } from "./head-model.mjs";
 
 const C = 299792458;
@@ -246,6 +246,7 @@ export function guideHtml({ LIDAR, HM, HF, CAL, fig1, fig2, fig3, scans }) {
     ${tryIt("Switch the optical layout in Figure 2 between Injection, Holed and Biaxial. In the biaxial head a small fold mirror sends the pulse to one side of the scan element, and the telescope looks back through the other.")}
     <h3>Walk-off</h3>
     <p>The scanner does not stop while a pulse is in the air. By the time the echo is back, the mirror has turned a little further, so the receiver now looks slightly ahead of the spot the laser lit. This lag is called <em>walk-off</em>: the beam's angular speed times the round trip. At ${f(WR)} m the round trip is ${f(wTrip * 1e6, 1)} µs. A galvo sweeping ±${S.galvo.half}° at ${S.galvo.rate} Hz turns the beam at about ${f(galvoRate)} rad/s mid-sweep, so the echo arrives ${f(galvoRate * wTrip * 1e3, 2)} mrad behind, more than the ${f(LIDAR.divergence * 1e3, 2)} mrad the beam itself spreads. A polygon at ${S.polygon.rate} rev/s turns the beam at ${f(polyRate)} rad/s, and its echo lags ${f(polyRate * wTrip * 1e3, 1)} mrad. The receiver's field of view must be wide enough to hold the walked-off spot, which also lets in more sunlight. A polygon always sweeps one way, so its field of view can simply be offset to trail the beam. A galvo reverses every line, so it needs a field wide enough on both sides. Walk-off grows with both range and scan speed.</p>
+    ${eq(`δ = ω · 2<i>R</i> / <i>c</i>`, `ω is the beam's angular speed; at ${f(WR)} m a galvo mid-sweep lags ${f(galvoRate * wTrip * 1e3, 2)} mrad, ${f(galvoRate * wTrip * WR * 100)} cm on the ground`, walkoffFig(LIDAR), "walkoff")}
 
     ${head(6)}
     <p>The scanner decides the pattern on the ground, and each design trades something. Choose one below Figure 2 and watch the top-down view redraw at ${F.alt} m and ${F.speed} m/s. The small drawings in the table trace the same model, flying to the right; the aircraft's advance between lines is exaggerated so the lines separate.</p>

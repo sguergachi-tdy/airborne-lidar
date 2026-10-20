@@ -2357,6 +2357,7 @@ html {
     <aside class="gd-try"><span class="gd-label">Try it</span><p>Switch the optical layout in Figure 2 between Injection, Holed and Biaxial. In the biaxial head a small fold mirror sends the pulse to one side of the scan element, and the telescope looks back through the other.</p></aside>
     <h3>Walk-off</h3>
     <p>The scanner does not stop while a pulse is in the air. By the time the echo is back, the mirror has turned a little further, so the receiver now looks slightly ahead of the spot the laser lit. This lag is called <em>walk-off</em>: the beam's <a class="gd-wiki" href="https://en.wikipedia.org/wiki/Angular_velocity" target="_blank" rel="noopener" title="Wikipedia: Angular velocity">angular speed</a> times the round trip. At 1000 m the round trip is 6.7 µs. A galvo sweeping ±18° at 50 Hz turns the beam at about 70 rad/s mid-sweep, so the echo arrives 0.46 mrad behind, more than the 0.25 mrad the beam itself spreads. A polygon at 50 rev/s turns the beam at 628 rad/s, and its echo lags 4.2 mrad. The receiver's field of view must be wide enough to hold the walked-off spot, which also lets in more sunlight. A polygon always sweeps one way, so its field of view can simply be offset to trail the beam. A galvo reverses every line, so it needs a field wide enough on both sides. Walk-off grows with both range and scan speed.</p>
+    <figure class="gd-eq gd-eq-drawn" data-anim="walkoff"><svg class="gq" viewBox="0 0 560 240" role="img" aria-label="Left, a galvo mirror sends a pulse 1000 m down; by the time its echo returns the mirror has turned on, and the receiver's field of view has moved 0.46 milliradians past the lit spot. Right, the echo's image on a 1 mrad field stop, offset by that walk-off."><path class="wash" d="M128 50L129.1 196L98.11 196Z"/><path class="ln t-f" d="M24 196L18 203M32 196L26 203M40 196L34 203M48 196L42 203M56 196L50 203M64 196L58 203M72 196L66 203M80 196L74 203M88 196L82 203M96 196L90 203M104 196L98 203M112 196L106 203M120 196L114 203M128 196L122 203M136 196L130 203M144 196L138 203M152 196L146 203M160 196L154 203M168 196L162 203M176 196L170 203M184 196L178 203M192 196L186 203M200 196L194 203M208 196L202 203M216 196L210 203M224 196L218 203M232 196L226 203M240 196L234 203M248 196L242 203M256 196L250 203M264 196L258 203M272 196L266 203M280 196L274 203M288 196L282 203M296 196L290 203M304 196L298 203M312 196L306 203M320 196L314 203M328 196L322 203"/><path class="ln t-s" d="M16 196L330 196"/><path class="ln t-f" d="M128 50L129.1 196"/><path class="ln t-f" d="M128 50L98.11 196"/><path class="ln t-h dash" d="M128 50L113.76 196"/><path class="ln t-a" d="M16 50L120.1 50"/><path class="fl t-a" d="M125 50L118.5 47.4L118.5 52.6Z"/><text class="lb" x="18" y="41" text-anchor="start">laser</text><path class="ln t-a" d="M128 50L128 196"/><path class="ln t-a trace" d="M131.82 196L124.18 196"/><circle class="fl t-a" cx="128" cy="196" r="2.4"/><path class="ln t-f mirror" d="M149.21 71.21L106.79 28.79"/><path class="ln t-h mirror" d="M148.16 72.22L107.84 27.78"/><circle class="ln t-h paper" cx="128" cy="50" r="2.6"/><path class="ln t-h" d="M128 154A104 104 0 0 1 117.91 153.51"/><text class="vi" x="110.72" y="164.7" text-anchor="end"><tspan class="vi">δ</tspan></text><path class="ln t-h" d="M128 212L113.76 212"/><path class="ln t-h" d="M128 207L128 217"/><path class="ln t-h" d="M113.76 207L113.76 217"/><text class="lb hd" x="120.88" y="232" text-anchor="middle"><tspan class="vi">δ</tspan>·<tspan class="vi">R</tspan> =  46 cm</text><path class="ln t-h" d="M306 50L306 196"/><path class="ln t-h" d="M301 50L311 50"/><path class="ln t-h" d="M301 196L311 196"/><text class="lb num" x="300" y="128" text-anchor="end"><tspan class="vi">R</tspan> = 1000 m</text><text class="lb" x="330" y="22" text-anchor="end">angles exaggerated</text><text class="lb" x="460" y="28" text-anchor="middle">field stop · 1 mrad</text><g opacity="1"><path class="ln t-h" d="M482 52L442.2 52"/><path class="fl t-h" d="M438 52L443.57 54.23L443.57 49.77Z"/></g><circle class="ln t-h paper" cx="460" cy="106" r="30"/><path class="ln t-f" d="M416 106L430 106"/><path class="ln t-f" d="M490 106L504 106"/><clipPath id="gd-wo-stop"><circle cx="460" cy="106" r="30"/></clipPath><circle class="fl t-a" opacity="0.3" cx="487.85" cy="106" r="7.5"/><g clip-path="url(#gd-wo-stop)"><circle class="fl t-a" cx="487.85" cy="106" r="7.5"/></g><text class="lb hd" x="460" y="166" text-anchor="middle"><tspan class="vi">δ</tspan> = 0.46 mrad</text><text class="lb" x="460" y="186" text-anchor="middle"> 66 % of the echo passes</text></svg><div class="gd-eq-math">δ = ω · 2<i>R</i> / <i>c</i></div><figcaption>ω is the beam's angular speed; at 1000 m a galvo mid-sweep lags 0.46 mrad, 46 cm on the ground</figcaption></figure>
 
     <header class="gd-chapter" id="scanners"><span class="gd-num">07</span><h2>Five ways to scan</h2></header>
     <p>The scanner decides the pattern on the ground, and each design trades something. Choose one below Figure 2 and watch the top-down view redraw at 150 m and 55 m/s. The small drawings in the table trace the same model, flying to the right; the aircraft's advance between lines is exaggerated so the lines separate.</p>
@@ -9362,6 +9363,72 @@ function georefFig(L, a = {}) {
   return svg(560, 252, "The georeferencing chain, seen from behind the aircraft: vector g from the map origin to the GNSS antenna, the attitude R nav tilting the aircraft, the lever arm l down to the IMU, the boresight R bore between the IMU's axis and the scanner's, and the pulse rho times u of theta out to the point p on the ground.", out);
 }
 
+// ---------------------------------------------------------------- 7 · walk-off, δ = ω·2R/c
+// animated, a.u is the galvo's phase in cycles and a.R the range; without them the mirror is mid-sweep at 1000 m.
+// The galvo follows the head model's rounded triangle; the receiver's field of view is taken as 1 mrad.
+const FOV = 1e-3;
+function galvoAt(L, u) {
+  const x = 2 * Math.PI * u;
+  const A = Math.asin(0.985);
+  const s = 0.985 * Math.sin(x);
+  return { theta: (L.half * Math.asin(s)) / A, rate: (rad(L.half) * 0.985 * Math.cos(x) * 2 * Math.PI * L.scanHz) / (A * Math.sqrt(1 - s * s)) };
+}
+// the share of a disc of radius b, d from the centre of a disc of radius a, that lies inside it
+function inside(a, b, d) {
+  if (d >= a + b) return 0;
+  if (d <= a - b) return 1;
+  const p = b * b * Math.acos((d * d + b * b - a * a) / (2 * d * b)) + a * a * Math.acos((d * d + a * a - b * b) / (2 * d * a));
+  return (p - 0.5 * Math.sqrt((-d + a + b) * (d + a - b) * (d - a + b) * (d + a + b))) / (Math.PI * b * b);
+}
+function walkoffFig(L, a = {}) {
+  const out = [];
+  const R = a.R ?? 1000;
+  const { theta, rate } = galvoAt(L, a.u ?? 0);
+  const delta = rate * ((2 * R) / C);
+  const mr = delta * 1e3;
+  // left: the beam when the pulse left, and where the receiver looks when its echo comes back; angles drawn 12°/mrad
+  const K = 12;
+  const M = [128, 50];
+  const gy = 196;
+  const h = gy - M[1];
+  const gx = (deg) => [M[0] - h * Math.tan(rad(deg)), gy];
+  const now = theta + K * mr;
+  const half = (K * FOV * 1e3) / 2;
+  const spot = (K * L.divergence * 1e3) / 2;
+  out.push(shape([M, gx(now - half), gx(now + half)], "wash"));
+  out.push(ground(16, 330, gy));
+  out.push(line([M, gx(now - half)], "f"), line([M, gx(now + half)], "f"), dash([M, gx(now)], "h"));
+  out.push(arrow([16, M[1]], [M[0] - 3, M[1]], "a"), text([18, M[1] - 9], "laser", "lb", "start"));
+  out.push(line([M, gx(theta)], "a"), line([gx(theta - spot), gx(theta + spot)], "a", " trace"), dot(gx(theta), 2.4, "a"));
+  out.push(`<path class="ln t-f mirror" d="${dOf([polar(M, 30, 45 + theta / 2), polar(M, 30, 225 + theta / 2)])}"/>`);
+  out.push(`<path class="ln t-h mirror" d="${dOf([polar(M, 30, 45 + now / 2), polar(M, 30, 225 + now / 2)])}"/>`);
+  out.push(ring(M, 2.6, "h"));
+  if (Math.abs(now - theta) > 0.6) out.push(arc(M, 104, 90 + Math.min(theta, now), 90 + Math.max(theta, now), "h"));
+  out.push(text(polar(M, 116, 90 + Math.max(theta, now) + 3), v("δ"), "vi", "end"));
+  const [x0, x1] = [gx(theta)[0], gx(now)[0]];
+  out.push(dim([x0, gy + 16], [x1, gy + 16]), text([(x0 + x1) / 2, gy + 36], `${v("δ")}·${v("R")} = ${pad(Math.round(Math.abs(delta) * R * 100), 3)} cm`, "lb hd"));
+  out.push(dim([306, M[1]], [306, gy]), text([300, (M[1] + gy) / 2 + 5], `${v("R")} = ${pad(Math.round(R), 4)} m`, "lb num", "end"));
+  out.push(text([330, 22], "angles exaggerated", "lb", "end"));
+  // right: the field stop seen from the detector, and the echo's image on it, offset by the walk-off
+  const Q = [460, 106];
+  const px = 60;
+  const rs = (FOV / 2) * 1e3 * px;
+  const rb = (L.divergence / 2) * 1e3 * px;
+  const c = [Q[0] + mr * px, Q[1]];
+  out.push(text([Q[0], 28], `field stop · ${FOV * 1e3} mrad`, "lb"));
+  const speed = Math.min(1, Math.abs(rate) / 40);
+  if (speed > 0.02) {
+    const s = Math.sign(rate);
+    out.push(`<g opacity="${n(speed)}">${arrow([Q[0] + 22 * s, 52], [Q[0] - 22 * s, 52], "h", 6)}</g>`);
+  }
+  out.push(ring(Q, rs, "h"), line([[Q[0] - rs - 14, Q[1]], [Q[0] - rs, Q[1]]], "f"), line([[Q[0] + rs, Q[1]], [Q[0] + rs + 14, Q[1]]], "f"));
+  out.push(`<clipPath id="gd-wo-stop"><circle cx="${Q[0]}" cy="${Q[1]}" r="${rs}"/></clipPath>`);
+  out.push(`<circle class="fl t-a" opacity="0.3" cx="${n(c[0])}" cy="${n(c[1])}" r="${rb}"/>`, `<g clip-path="url(#gd-wo-stop)"><circle class="fl t-a" cx="${n(c[0])}" cy="${n(c[1])}" r="${rb}"/></g>`);
+  out.push(text([Q[0], 166], `${v("δ")} = ${pad(Math.abs(mr).toFixed(2), 4)} mrad`, "lb hd"));
+  out.push(text([Q[0], 186], `${pad(Math.round(inside(rs, rb, Math.abs(mr) * px) * 100), 3)} % of the echo passes`, "lb"));
+  return svg(560, 240, `Left, a galvo mirror sends a pulse ${Math.round(R)} m down; by the time its echo returns the mirror has turned on, and the receiver's field of view has moved ${n(mr)} milliradians past the lit spot. Right, the echo's image on a 1 mrad field stop, offset by that walk-off.`, out);
+}
+
 // ---------------------------------------------------------------- the drawings' animations
 // Each one plays once when it scrolls into view: at(t) gives the parameters to change and the drawing's own state at
 // time t (s), and every animation ends exactly on the drawing at rest, so the page reads the same when it stops.
@@ -9454,8 +9521,14 @@ const ANIMS = {
       return { a: { roll, theta, trail } };
     },
   },
+  // the galvo sweeps, slowed to one cycle in 2.5 s, at 1000 m, out to 2000 m, in to 300 m and back: the lag swings
+  // with the mirror's speed, vanishes at each turnaround and grows with range
+  walkoff: {
+    dur: 10,
+    at: (t) => ({ a: { u: t / 2.5, R: Math.round(kf(t, [[1.2, 1000], [2.8, 2000], [4.4, 2000], [6.2, 300], [7.6, 300], [9.2, 1000]])) } }),
+  },
 };
-const FIGS = { ranging: rangingFig, maxRange: maxRangeFig, swath: swathFig, spacing: spacingFig, density: densityFig, georef: georefFig };
+const FIGS = { ranging: rangingFig, maxRange: maxRangeFig, swath: swathFig, spacing: spacingFig, density: densityFig, georef: georefFig, walkoff: walkoffFig };
 
 
 return { FIGS, ANIMS, lidarWith };})();

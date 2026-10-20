@@ -368,6 +368,72 @@ export function georefFig(L, a = {}) {
   return svg(560, 252, "The georeferencing chain, seen from behind the aircraft: vector g from the map origin to the GNSS antenna, the attitude R nav tilting the aircraft, the lever arm l down to the IMU, the boresight R bore between the IMU's axis and the scanner's, and the pulse rho times u of theta out to the point p on the ground.", out);
 }
 
+// ---------------------------------------------------------------- 7 · walk-off, δ = ω·2R/c
+// animated, a.u is the galvo's phase in cycles and a.R the range; without them the mirror is mid-sweep at 1000 m.
+// The galvo follows the head model's rounded triangle; the receiver's field of view is taken as 1 mrad.
+const FOV = 1e-3;
+function galvoAt(L, u) {
+  const x = 2 * Math.PI * u;
+  const A = Math.asin(0.985);
+  const s = 0.985 * Math.sin(x);
+  return { theta: (L.half * Math.asin(s)) / A, rate: (rad(L.half) * 0.985 * Math.cos(x) * 2 * Math.PI * L.scanHz) / (A * Math.sqrt(1 - s * s)) };
+}
+// the share of a disc of radius b, d from the centre of a disc of radius a, that lies inside it
+function inside(a, b, d) {
+  if (d >= a + b) return 0;
+  if (d <= a - b) return 1;
+  const p = b * b * Math.acos((d * d + b * b - a * a) / (2 * d * b)) + a * a * Math.acos((d * d + a * a - b * b) / (2 * d * a));
+  return (p - 0.5 * Math.sqrt((-d + a + b) * (d + a - b) * (d - a + b) * (d + a + b))) / (Math.PI * b * b);
+}
+export function walkoffFig(L, a = {}) {
+  const out = [];
+  const R = a.R ?? 1000;
+  const { theta, rate } = galvoAt(L, a.u ?? 0);
+  const delta = rate * ((2 * R) / C);
+  const mr = delta * 1e3;
+  // left: the beam when the pulse left, and where the receiver looks when its echo comes back; angles drawn 12°/mrad
+  const K = 12;
+  const M = [128, 50];
+  const gy = 196;
+  const h = gy - M[1];
+  const gx = (deg) => [M[0] - h * Math.tan(rad(deg)), gy];
+  const now = theta + K * mr;
+  const half = (K * FOV * 1e3) / 2;
+  const spot = (K * L.divergence * 1e3) / 2;
+  out.push(shape([M, gx(now - half), gx(now + half)], "wash"));
+  out.push(ground(16, 330, gy));
+  out.push(line([M, gx(now - half)], "f"), line([M, gx(now + half)], "f"), dash([M, gx(now)], "h"));
+  out.push(arrow([16, M[1]], [M[0] - 3, M[1]], "a"), text([18, M[1] - 9], "laser", "lb", "start"));
+  out.push(line([M, gx(theta)], "a"), line([gx(theta - spot), gx(theta + spot)], "a", " trace"), dot(gx(theta), 2.4, "a"));
+  out.push(`<path class="ln t-f mirror" d="${dOf([polar(M, 30, 45 + theta / 2), polar(M, 30, 225 + theta / 2)])}"/>`);
+  out.push(`<path class="ln t-h mirror" d="${dOf([polar(M, 30, 45 + now / 2), polar(M, 30, 225 + now / 2)])}"/>`);
+  out.push(ring(M, 2.6, "h"));
+  if (Math.abs(now - theta) > 0.6) out.push(arc(M, 104, 90 + Math.min(theta, now), 90 + Math.max(theta, now), "h"));
+  out.push(text(polar(M, 116, 90 + Math.max(theta, now) + 3), v("δ"), "vi", "end"));
+  const [x0, x1] = [gx(theta)[0], gx(now)[0]];
+  out.push(dim([x0, gy + 16], [x1, gy + 16]), text([(x0 + x1) / 2, gy + 36], `${v("δ")}·${v("R")} = ${pad(Math.round(Math.abs(delta) * R * 100), 3)} cm`, "lb hd"));
+  out.push(dim([306, M[1]], [306, gy]), text([300, (M[1] + gy) / 2 + 5], `${v("R")} = ${pad(Math.round(R), 4)} m`, "lb num", "end"));
+  out.push(text([330, 22], "angles exaggerated", "lb", "end"));
+  // right: the field stop seen from the detector, and the echo's image on it, offset by the walk-off
+  const Q = [460, 106];
+  const px = 60;
+  const rs = (FOV / 2) * 1e3 * px;
+  const rb = (L.divergence / 2) * 1e3 * px;
+  const c = [Q[0] + mr * px, Q[1]];
+  out.push(text([Q[0], 28], `field stop · ${FOV * 1e3} mrad`, "lb"));
+  const speed = Math.min(1, Math.abs(rate) / 40);
+  if (speed > 0.02) {
+    const s = Math.sign(rate);
+    out.push(`<g opacity="${n(speed)}">${arrow([Q[0] + 22 * s, 52], [Q[0] - 22 * s, 52], "h", 6)}</g>`);
+  }
+  out.push(ring(Q, rs, "h"), line([[Q[0] - rs - 14, Q[1]], [Q[0] - rs, Q[1]]], "f"), line([[Q[0] + rs, Q[1]], [Q[0] + rs + 14, Q[1]]], "f"));
+  out.push(`<clipPath id="gd-wo-stop"><circle cx="${Q[0]}" cy="${Q[1]}" r="${rs}"/></clipPath>`);
+  out.push(`<circle class="fl t-a" opacity="0.3" cx="${n(c[0])}" cy="${n(c[1])}" r="${rb}"/>`, `<g clip-path="url(#gd-wo-stop)"><circle class="fl t-a" cx="${n(c[0])}" cy="${n(c[1])}" r="${rb}"/></g>`);
+  out.push(text([Q[0], 166], `${v("δ")} = ${pad(Math.abs(mr).toFixed(2), 4)} mrad`, "lb hd"));
+  out.push(text([Q[0], 186], `${pad(Math.round(inside(rs, rb, Math.abs(mr) * px) * 100), 3)} % of the echo passes`, "lb"));
+  return svg(560, 240, `Left, a galvo mirror sends a pulse ${Math.round(R)} m down; by the time its echo returns the mirror has turned on, and the receiver's field of view has moved ${n(mr)} milliradians past the lit spot. Right, the echo's image on a 1 mrad field stop, offset by that walk-off.`, out);
+}
+
 // ---------------------------------------------------------------- the drawings' animations
 // Each one plays once when it scrolls into view: at(t) gives the parameters to change and the drawing's own state at
 // time t (s), and every animation ends exactly on the drawing at rest, so the page reads the same when it stops.
@@ -460,8 +526,14 @@ export const ANIMS = {
       return { a: { roll, theta, trail } };
     },
   },
+  // the galvo sweeps, slowed to one cycle in 2.5 s, at 1000 m, out to 2000 m, in to 300 m and back: the lag swings
+  // with the mirror's speed, vanishes at each turnaround and grows with range
+  walkoff: {
+    dur: 10,
+    at: (t) => ({ a: { u: t / 2.5, R: Math.round(kf(t, [[1.2, 1000], [2.8, 2000], [4.4, 2000], [6.2, 300], [7.6, 300], [9.2, 1000]])) } }),
+  },
 };
-export const FIGS = { ranging: rangingFig, maxRange: maxRangeFig, swath: swathFig, spacing: spacingFig, density: densityFig, georef: georefFig };
+export const FIGS = { ranging: rangingFig, maxRange: maxRangeFig, swath: swathFig, spacing: spacingFig, density: densityFig, georef: georefFig, walkoff: walkoffFig };
 
 // ---------------------------------------------------------------- wavelength: what each laser sees
 // Typical reflectance of a green leaf, dry bare soil and fresh fine-grained snow (after the USGS and ASTER spectral
