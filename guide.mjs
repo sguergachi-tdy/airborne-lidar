@@ -72,6 +72,11 @@ const WIKI = [
   [/time-to-digital counter/, "Time-to-digital converter"],
   [/\bspeckle\b/, "Speckle (interference)"],
   [/beam divergence/, "Beam divergence"],
+  // no article covers biaxial lidar; bistatic radar is the same idea with radio, set against the monostatic (coaxial) case
+  [/\b[Bb]iaxial\b/, "Bistatic radar"],
+  [/\bparallax\b/, "Parallax"],
+  [/field of view/, "Field of view"],
+  [/angular speed/, "Angular velocity"],
 ];
 const wikiLinks = (html) => {
   const prose = new Set();
@@ -123,6 +128,11 @@ export function guideHtml({ LIDAR, HM, HF, CAL, fig1, fig2, fig3, scans }) {
   const spotCm = (LIDAR.divergence ?? 0.25e-3) * alt * 100;
   const S = HM.SCANNERS;
   const F = HM.FLIGHT;
+  // walk-off: the beam's angular speed times the round trip; the galvo's mid-sweep rate comes from its own pose curve
+  const WR = 1000;
+  const wTrip = (2 * WR) / C;
+  const galvoRate = (S.galvo.half * Math.PI / 180) * 0.985 * 2 * Math.PI * S.galvo.rate / Math.asin(0.985);
+  const polyRate = 2 * 2 * Math.PI * S.polygon.rate;
 
   const chapters = [
     ["ranging", "Ranging with light"],
@@ -232,8 +242,10 @@ export function guideHtml({ LIDAR, HM, HF, CAL, fig1, fig2, fig3, scans }) {
     <p>The echo returns through the same scanner to the receiving telescope. Its objective lens focuses the light onto a <em>pinhole field stop</em>, which blocks light from anywhere but the lit spot. A relay lens makes the light parallel again for a <em>narrowband filter</em> that rejects sunlight. The light then reaches the detector, either an avalanche photodiode (APD) in a TO can wired to a transimpedance amplifier, or a microlensed single-photon (SPAD) array on a Peltier cooler.</p>
     <h3>Sharing one path</h3>
     <p>The outgoing beam is narrow and the echo is wide, so where they share a path the two must be separated. Either a small <em>injection mirror</em> sits in the middle of the returning bundle and the telescope gathers the ring of light around it, or a <em>holed (scraper) mirror</em> lets the pulse out through its centre and turns the echo aside with its rim. In both cases the few percent of echo that hits the small mirror or the hole is lost.</p>
-    <p>Not every sensor shares a path. In a <em>biaxial</em> design the transmitter and the receiver look out side by side, each through its own optics, so no echo is lost to a shared mirror. The price is alignment: the beam and the receiver's field of view only overlap beyond a certain range, and must stay aligned across the whole scan and through temperature changes.</p>
+    <p>Not every sensor shares a path. In a <em>biaxial</em> design the transmitter and the receiver look out side by side, each through its own optics, so no echo is lost to a shared mirror. The price is alignment and parallax: seen from points a few centimetres apart, the beam and the receiver's field of view only overlap beyond a certain range, and must stay aligned across the whole scan and through temperature changes.</p>
     ${tryIt("Switch the optical layout in Figure 2 between Injection, Holed and Biaxial. In the biaxial head a small fold mirror sends the pulse to one side of the scan element, and the telescope looks back through the other.")}
+    <h3>Walk-off</h3>
+    <p>The scanner does not stop while a pulse is in the air. By the time the echo is back, the mirror has turned a little further, so the receiver now looks slightly ahead of the spot the laser lit. This lag is called <em>walk-off</em>: the beam's angular speed times the round trip. At ${f(WR)} m the round trip is ${f(wTrip * 1e6, 1)} µs. A galvo sweeping ±${S.galvo.half}° at ${S.galvo.rate} Hz turns the beam at about ${f(galvoRate)} rad/s mid-sweep, so the echo arrives ${f(galvoRate * wTrip * 1e3, 2)} mrad behind, more than the ${f(LIDAR.divergence * 1e3, 2)} mrad the beam itself spreads. A polygon at ${S.polygon.rate} rev/s turns the beam at ${f(polyRate)} rad/s, and its echo lags ${f(polyRate * wTrip * 1e3, 1)} mrad. The receiver's field of view must be wide enough to hold the walked-off spot, which also lets in more sunlight. A polygon always sweeps one way, so its field of view can simply be offset to trail the beam. A galvo reverses every line, so it needs a field wide enough on both sides. Walk-off grows with both range and scan speed.</p>
 
     ${head(6)}
     <p>The scanner decides the pattern on the ground, and each design trades something. Choose one below Figure 2 and watch the top-down view redraw at ${F.alt} m and ${F.speed} m/s. The small drawings in the table trace the same model, flying to the right; the aircraft's advance between lines is exaggerated so the lines separate.</p>
@@ -337,6 +349,7 @@ export function guideHtml({ LIDAR, HM, HF, CAL, fig1, fig2, fig3, scans }) {
       <dt>Swath</dt><dd>The width of ground covered across the track in one pass.</dd>
       <dt>T<sub>0</sub></dt><dd>The instant the laser fires, where the timing count starts.</dd>
       <dt>Unambiguous range</dt><dd>c / (2 · PRF): the farthest range timed before the next pulse fires.</dd>
+      <dt>Walk-off</dt><dd>The angle the scanner turns while a pulse is in the air, by which the receiver's view has moved on from the lit spot when its echo returns.</dd>
     </dl>
 
     <aside class="gd-colophon">
