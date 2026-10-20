@@ -1020,7 +1020,7 @@ const SUB = [
   ...["galvo", "polygon", "palmer"].map((id) => ({ key: "rate", label: "Scan freq", unit: HMS[id].unit === "Hz" ? "Hz" : "rev/s", options: HMS[id].rates.map((f) => [f, String(f)]), only: `scanner:${id}` })),
 ];
 const GROUPS = [
-  { title: "Laser", rows: [{ key: "laser", label: "Wavelength", options: [["yag", "1064 nm"], ["fibre", "1550 nm"], ["green", "532 nm"], ["diode", "905 nm"]] }, { key: "prf", label: "Pulse rate (PRF)", options: [[100e3, "100k"], [250e3, "250k"], [500e3, "500k"], [1e6, "1M"], [2e6, "2M"], [4e6, "4M"]] }] },
+  { title: "Laser", rows: [{ key: "laser", label: "Wavelength", options: [["fibre", "1550 nm"], ["yag", "1064 nm"], ["diode", "905 nm"], ["green", "532 nm"]] }, { key: "prf", label: "Pulse rate (PRF)", options: [[100e3, "100k"], [250e3, "250k"], [500e3, "500k"], [1e6, "1M"], [2e6, "2M"], [4e6, "4M"]] }] },
   { title: "Receiver", rows: [{ key: "detector", label: "Detection", options: [["discrete", "Discrete"], ["waveform", "Waveform"], ["photon", "Photon"]] }, { key: "rx", label: "Optical layout", options: [["inject", "Injection"], ["holed", "Holed"], ["biaxial", "Biaxial"]] }] },
   { title: "Navigation", rows: [{ key: "nav", label: "Position and attitude", options: [["ins", "GNSS + IMU"], ["gnss", "GNSS only"], ["none", "None"]] }] },
 ];
