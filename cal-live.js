@@ -338,7 +338,7 @@
     if (note)
       note.textContent =
         state.pattern === "pair"
-          ? "Two opposite lines see every roof from the same two sides. Roll shows at once; pitch and heading can trade off, so the strips can agree while every point is off."
+          ? "Two opposite lines see every roof from the same two sides. Roll shows at once; pitch and heading separate only weakly, so the strips can agree while the points are still off."
           : "A cross line looks at the same roofs from 90°. Now pitch and heading pull apart and all three angles are found.";
     const profNote = fig.querySelector('[data-part="prof-note"]');
     if (profNote) profNote.textContent = "true roof faint";
